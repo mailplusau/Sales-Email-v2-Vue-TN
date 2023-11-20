@@ -15,16 +15,29 @@
                 </v-row>
             </v-container>
 
-            <v-divider class="mb-3"></v-divider>
+            <v-tabs v-model="mainTab" color="primary" background-color="background">
+                <v-tab :href="`#${mainTabNames.HOME}`">
+                    <v-icon left>mdi-home</v-icon>
+                    Home
+                </v-tab>
 
-            <v-container>
-                <v-row justify="center">
-                    <v-col xl="9" lg="11" cols="12">
-                        Contents
-                    </v-col>
-                </v-row>
-            </v-container>
+                <v-spacer></v-spacer>
 
+                <v-tab :href="`#${mainTabNames.HELP}`">
+                    <v-icon left>mdi-help-circle-outline</v-icon>
+                    Help
+                </v-tab>
+            </v-tabs>
+
+            <v-divider></v-divider>
+
+            <v-tabs-items v-model="mainTab" class="background">
+                <v-tab-item :value="mainTabNames.HOME">
+                    <EmailSender />
+                </v-tab-item>
+                <v-tab-item :value="mainTabNames.HELP">
+                </v-tab-item>
+            </v-tabs-items>
         </v-main>
 
         <GlobalNotificationModal />
@@ -34,6 +47,7 @@
 <script>
 import {VARS} from '@/utils/utils.mjs';
 import GlobalNotificationModal from "@/components/GlobalNotificationModal";
+import EmailSender from '@/views/email-sender/Main';
 
 export default {
     name: 'App',
@@ -42,6 +56,7 @@ export default {
     }),
     components: {
         GlobalNotificationModal,
+        EmailSender
     },
     beforeCreate() {
         this.$store.dispatch('init');
