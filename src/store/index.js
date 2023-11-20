@@ -74,15 +74,22 @@ const actions = {
     },
     init : async context => {
         if (!_checkNetSuiteEnv()) return;
+        if (!top.location.href.includes(baseURL)) return;
+
+        _readUrlParams(context);
 
         console.log('Ready');
     },
+    handleException : (context, {title, message}) => {
+        context.commit('displayErrorGlobalModal', {
+            title, message
+        })
+    },
 };
 
-function _checkNetSuiteEnv() {
-    if (parent['getCurrentNetSuiteUrl']) {
-        return parent.getCurrentNetSuiteUrl().includes(baseURL);
-    } else return false;
+function _readUrlParams(context) {
+
+}
 }
 
 const store = new Vuex.Store({
