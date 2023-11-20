@@ -15,7 +15,8 @@ const state = {
         busy: false,
         progress: -1,
         persistent: true,
-        isError: false
+        isError: false,
+        buttons: [],
     },
 };
 
@@ -25,6 +26,17 @@ const getters = {
 
 const mutations = {
     displayErrorGlobalModal: (state, {title, message}) => {
+    closeGlobalModal: state => {
+        state.globalModal.title = '';
+        state.globalModal.body = '';
+        state.globalModal.busy = false;
+        state.globalModal.open = false;
+        state.globalModal.progress = -1;
+        state.globalModal.persistent = false;
+        state.globalModal.isError = false;
+        state.globalModal.buttons.splice(0);
+    },
+    displayErrorGlobalModal: (state, {title, message, buttons = []}) => {
         state.globalModal.title = title;
         state.globalModal.body = message;
         state.globalModal.busy = false;
@@ -32,8 +44,9 @@ const mutations = {
         state.globalModal.progress = -1;
         state.globalModal.persistent = true;
         state.globalModal.isError = true;
+        state.globalModal.buttons = [...buttons];
     },
-    displayBusyGlobalModal: (state, {title, message, open = true, progress = -1}) => {
+    displayBusyGlobalModal: (state, {title, message, open = true, progress = -1, buttons = []}) => {
         state.globalModal.title = title;
         state.globalModal.body = message;
         state.globalModal.busy = open;
@@ -41,8 +54,9 @@ const mutations = {
         state.globalModal.progress = progress;
         state.globalModal.persistent = true;
         state.globalModal.isError = false;
+        state.globalModal.buttons = [...buttons];
     },
-    displayInfoGlobalModal: (state, {title, message, persistent = false}) => {
+    displayInfoGlobalModal: (state, {title, message, persistent = false, buttons = []}) => {
         state.globalModal.title = title;
         state.globalModal.body = message;
         state.globalModal.busy = false;
@@ -50,7 +64,8 @@ const mutations = {
         state.globalModal.progress = -1;
         state.globalModal.persistent = persistent;
         state.globalModal.isError = false;
-    }
+        state.globalModal.buttons = [...buttons];
+    },
 };
 
 const actions = {

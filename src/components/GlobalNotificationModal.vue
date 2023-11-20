@@ -24,15 +24,24 @@
             <v-card-text :class="globalModal.busy ? 'text-center' : ''" v-html="globalModal.body"></v-card-text>
 
             <v-card-actions>
-                <v-spacer></v-spacer>
-                <v-btn
-                    color="green darken-1"
-                    text
-                    @click="dialog = false"
-                    :disabled="globalModal.busy"
-                >
-                    Okay
-                </v-btn>
+                <template v-for="(button, index) in globalModal.buttons">
+                    <v-spacer v-if="typeof button === 'string' && button === 'spacer'" :key="'button' + index"></v-spacer>
+                    <v-btn v-else-if="typeof button === 'object'" :key="'button' + index"
+                           :color="button.color || 'green darken-1'"
+                           text
+                           @click="() => { if (button.action) $store.dispatch(button.action); else dialog = false;}"
+                           :disabled="globalModal.busy"
+                    >
+                        {{ button.text}}
+                    </v-btn>
+                </template>
+                <template v-if="!globalModal.buttons.length">
+                    <v-spacer></v-spacer>
+                    <v-btn color="green darken-1" text
+                        @click="dialog = false" :disabled="globalModal.busy">
+                        Okay
+                    </v-btn>
+                </template>
             </v-card-actions>
         </v-card>
     </v-dialog>
