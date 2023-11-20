@@ -5,7 +5,7 @@
                 <v-row class="mx-1" justify="space-between" align="center">
                     <v-col cols="auto">
                         <h1 class="primary--text">
-                            Test Page
+                            {{ pageTitle }}
                         </h1>
                     </v-col>
 
@@ -32,17 +32,38 @@
 </template>
 
 <script>
+import {VARS} from '@/utils/utils.mjs';
 import GlobalNotificationModal from "@/components/GlobalNotificationModal";
 
 export default {
     name: 'App',
+    data: () => ({
+        ...VARS,
+    }),
     components: {
         GlobalNotificationModal,
     },
+    beforeCreate() {
+        this.$store.dispatch('init');
+    },
     computed:{
-        theme(){
+        theme() {
             return (this.$vuetify.theme.dark) ? 'dark' : 'light'
-        }
+        },
+        mainTab: {
+            get() {
+                return this.$store.getters['mainTab'];
+            },
+            set(val) {
+                this.$store.commit('setMainTab', val);
+            }
+        },
     }
 };
 </script>
+
+<style>
+.v-text-field__prefix {
+    font-weight: 600;
+}
+</style>
