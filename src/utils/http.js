@@ -35,14 +35,40 @@ export default {
                 .send({operation, requestParams})
                 .end((err, res) => { _handle(err, res, reject, resolve); });
         });
+    },
+    getBase64PDF(url, params) {
+        return new Promise((resolve, reject) => {
+            superagent.get(url)
+                .set("Accept", "application/pdf")
+                .responseType('blob')
+                .query(params)
+                .end((err, res) => {
+                    let errorMessage = err || (res.body?.error || null);
+                    if (errorMessage) reject(errorMessage);
+                    else {
+                        let reader = new FileReader();
+                        reader.onload = (event) => {
+                            try {
+                                resolve(event.target.result.split(',')[1]);
+                            } catch (e) {reject(e);}
+                        }
+                        reader.onerror = (e) => {
+                            reject(e);
+                        }
+                        reader.readAsDataURL(res.body);
+                    }
+                });
+        });
     }
 }
 
-function _handle(err, res, reject, resolve) {
+function _handle(err, res, reject, resolve, noErrorPopup = false) {
     let errorMessage = err || (res.body?.error || null);
 
     if (errorMessage) {
-        store.dispatch('handleException', {title: 'An error occurred', message: errorMessage}, {root: true}).then();
+        if (!noErrorPopup) store.dispatch('handleException',
+            {title: 'An error occurred', message: errorMessage}, {root: true}).then();
+
         reject(errorMessage);
     } else resolve(res.body);
 }
