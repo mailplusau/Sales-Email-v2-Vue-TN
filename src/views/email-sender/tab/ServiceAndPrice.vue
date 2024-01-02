@@ -25,7 +25,8 @@
                             <v-spacer></v-spacer>
 
                             <v-btn color="secondary" outlined small @click="updateService" :disabled="busy">
-                                update service changes
+                                <span v-if="tableItems.length <= 0">Add service</span>
+                                <span v-else>update service changes</span>
                             </v-btn>
                         </v-toolbar>
                     </template>
@@ -138,11 +139,8 @@ export default {
                 customdeploy: 'customdeploy_sl_send_email_module'
             }
             if (top['nlapiResolveURL']) {
-                // this.iframeSrc = baseURL +
-                //     top['nlapiResolveURL']('SUITELET', 'customscript_sl_service_change_tn_v2_vue', 'customdeploy_sl_service_change_tn_v2_vue') +
-                //     '&iframeMode=T&custparam_params=' + JSON.stringify(params);
                 this.iframeSrc = baseURL +
-                    top['nlapiResolveURL']('SUITELET', 'customscript_sl_test_page_tn_v2_vue', 'customdeploy_sl_test_page_tn_v2_vue') +
+                    top['nlapiResolveURL']('SUITELET', 'customscript_sl_service_change_tn_v2_vue', 'customdeploy_sl_service_change_tn_v2_vue') +
                     '&standalone=T&custparam_params=' + JSON.stringify(params);
 
                 console.log(this.iframeSrc);
