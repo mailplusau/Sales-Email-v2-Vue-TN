@@ -57,8 +57,8 @@
             </v-col>
         </v-row>
 
-        <v-dialog
-            v-model="serviceChangeDialog"
+        <v-dialog v-if="!displayOnly"
+            :value="iframeDialogOpen"
             fullscreen
             hide-overlay
             scrollable
@@ -72,9 +72,7 @@
                     </v-toolbar-title>
                     <v-spacer></v-spacer>
                     <v-toolbar-items>
-                        <v-btn color="yellow" text @click="closeIframe">
-                            Done & close
-                        </v-btn>
+<!--                        <v-btn color="yellow" text @click="closeIframe">Done & close</v-btn>-->
                     </v-toolbar-items>
                 </v-toolbar>
 
@@ -88,7 +86,7 @@
                     ></v-progress-circular>
                     <p class="mt-5">Loading. Please wait...</p>
                 </div>
-                <iframe v-if="iframeSrc" v-show="!iframeLoading" class="webview-iframe" :src="iframeSrc" @load="handleIframeLoaded"></iframe>
+                <iframe v-show="!iframeLoading" class="webview-iframe" :src="iframeDialogSrc" @load="handleIframeLoaded"></iframe>
             </v-card>
         </v-dialog>
     </v-card>
@@ -120,10 +118,17 @@ export default {
             { text: 'New Price', value: 'custrecord_servicechg_new_price', sortable: false, align: 'center' },
             { text: 'Frequency', value: 'custrecord_servicechg_new_freq_text', sortable: false, align: 'center'},
         ],
-        serviceChangeDialog: false,
-        iframeSrc: null,
-        iframeLoading: false,
+        iframeLoading: true,
     }),
+    mounted() {
+        console.log('ServiceAndPrice mounted')
+        if (!window.closeServiceAndPriceDialog) {
+            window.closeServiceAndPriceDialog = () => {
+                console.log('closeServiceAndPriceDialog');
+                this.closeIframe();
+            };
+        }
+    },
     methods: {
         updateService() {
             let params = {
@@ -136,24 +141,24 @@ export default {
                 savecustomer: 'F',
                 commreg: this.$store.getters['service-changes/commRegId'],
                 customid: 'customscript_sl_send_email_module',
-                customdeploy: 'customdeploy_sl_send_email_module'
+                customdeploy: 'customdeploy_sl_send_email_module',
+                cache_burst: Date.now()
             }
             if (top['nlapiResolveURL']) {
-                this.iframeSrc = baseURL +
+                let url = baseURL +
                     top['nlapiResolveURL']('SUITELET', 'customscript_sl_service_change_tn_v2_vue', 'customdeploy_sl_service_change_tn_v2_vue') +
                     '&standalone=T&custparam_params=' + JSON.stringify(params);
 
-                console.log(this.iframeSrc);
+                this.iframeLoading = true;
+                this.$store.commit('service-changes/openIframeDialog', url)
             }
-            this.iframeLoading = true;
-            this.serviceChangeDialog = true;
         },
         closeIframe() {
-            this.serviceChangeDialog = false;
-            this.iframeSrc = null;
+            this.$store.commit('service-changes/closeIframeDialog');
             this.$store.dispatch('service-changes/get');
         },
         handleIframeLoaded() {
+            console.log('handleIframeLoaded')
             this.iframeLoading = false;
         },
         goToThis() {
@@ -177,6 +182,13 @@ export default {
         tabs() {
             return this.$store.getters['email-sender/functionTabs'].options;
         },
+
+        iframeDialogOpen() {
+            return this.$store.getters['service-changes/iframeDialog'].open;
+        },
+        iframeDialogSrc() {
+            return this.$store.getters['service-changes/iframeDialog'].src;
+        }
     }
 };
 </script>

@@ -5,6 +5,11 @@ const state = {
     busy: false,
     salesRecordId: null,
     commRegId: null,
+
+    iframeDialog: {
+        open: false,
+        src: null,
+    }
 };
 
 const getters = {
@@ -12,10 +17,19 @@ const getters = {
     busy: state => state.busy,
     salesRecordId : state => state.salesRecordId,
     commRegId : state => state.commRegId,
+
+    iframeDialog : state => state.iframeDialog,
 };
 
 const mutations = {
-
+    openIframeDialog : (state, src) => {
+        state.iframeDialog.src = src;
+        state.iframeDialog.open = true;
+    },
+    closeIframeDialog : (state) => {
+        state.iframeDialog.open = false;
+        state.iframeDialog.src = null;
+    },
 };
 
 const actions = {
@@ -41,7 +55,14 @@ const actions = {
                 commRegId: context.state.commRegId
             });
 
-            context.state.data = Array.isArray(data) ? [...data] : [];
+            let freqArray = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Adhoc']
+            context.state.data = Array.isArray(data) ? data.map(item => {
+                let freqIdArray = item['custrecord_servicechg_new_freq'].split(',');
+
+                let newFreqStr = freqIdArray.map(id => freqArray[parseInt(id) - 1]).join(', ');
+
+                return {...item, custrecord_servicechg_new_freq_text: newFreqStr};
+            }) : [];
         }
 
         context.state.busy = false;
