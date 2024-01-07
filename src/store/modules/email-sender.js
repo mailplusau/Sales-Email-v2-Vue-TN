@@ -10,10 +10,10 @@ const state = {
 
     formsToSend: {
         options: [
-            {value: 179, text: 'SC - Proposal - SCF'},
-            {value: 159, text: 'Service Commencement Form'},
-            {value: 94, text: 'Standing Order Form'},
-            {value: 186, text: 'Change of Entity Form'},
+            {value: 179, text: 'SC - Proposal - SCF', filename: 'proposal_scf'},
+            {value: 159, text: 'Service Commencement Form', filename: 'scf'},
+            {value: 94, text: 'Standing Order Form', filename: 'standing_order'},
+            {value: 186, text: 'Change of Entity Form', filename: 'coe'},
         ],
         selected: [],
     },
@@ -158,9 +158,13 @@ const actions = {
         context.commit('displayBusyGlobalModal', {title: 'Processing', message: 'Preparing attachment. Please wait...'}, {root: true});
 
         let base64StringArray = [];
+        let formattedDate = getFormattedDate();
 
         if (parseInt(context.state.emailDetails.recipient) > 0) {
             for (let id of context.state.formsToSend.selected) {
+                let formIndex = context.state.formsToSend.options.findIndex(item => item.value === id);
+                let formInfo = formIndex >= 0 ? context.state.formsToSend.options[formIndex] : {};
+
                 let params = {
                     script: 746,
                     deploy: 1,
@@ -176,7 +180,7 @@ const actions = {
                 let base64Str = await http.getBase64PDF(baseURL + '/app/site/hosting/scriptlet.nl', params);
 
                 base64StringArray.push({
-                    filename: `form_${id}_${context.rootGetters['customer/id']}.pdf`,
+                    filename: `${formInfo.filename}_${context.rootGetters['customer/id']}_${formattedDate}.pdf`,
                     base64Str
                 });
             }
@@ -225,6 +229,18 @@ const actions = {
         }, {root: true});
     }
 };
+
+function getFormattedDate() {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    let mm = today.getMonth() + 1; // Months start at 0!
+    let dd = today.getDate();
+
+    if (dd < 10) dd = '0' + dd;
+    if (mm < 10) mm = '0' + mm;
+
+    return yyyy + mm + dd;
+}
 
 export default {
     state,
