@@ -84,9 +84,7 @@ export default {
         },
         save() {
             let res = this.$refs.form.validate();
-            console.log('Form validation result', res);
             if (!res) return;
-            console.log('Form validated, let\'s go');
             this.dialog.open = true;
         },
         proceed() {

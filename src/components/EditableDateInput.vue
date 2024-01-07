@@ -77,8 +77,6 @@ export default {
 
             let dateObj = new Date(`${year}-${month}-${day}`);
 
-            console.log(dateObj.getTime());
-
             return (!isNaN(dateObj.getTime()) && year.length <= 4) || 'Invalid date format. Must be DD/MM/YYYY.';
         },
         handleEnterOnDatePicker(e) {

@@ -121,10 +121,8 @@ export default {
         iframeLoading: true,
     }),
     mounted() {
-        console.log('ServiceAndPrice mounted')
         if (!window.closeServiceAndPriceDialog) {
             window.closeServiceAndPriceDialog = () => {
-                console.log('closeServiceAndPriceDialog');
                 this.closeIframe();
             };
         }
@@ -158,7 +156,6 @@ export default {
             this.$store.dispatch('service-changes/get');
         },
         handleIframeLoaded() {
-            console.log('handleIframeLoaded')
             this.iframeLoading = false;
         },
         goToThis() {
