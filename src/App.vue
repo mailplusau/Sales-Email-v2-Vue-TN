@@ -36,6 +36,7 @@
                     <EmailSender />
                 </v-tab-item>
                 <v-tab-item :value="mainTabNames.HELP">
+                    <HelpPage />
                 </v-tab-item>
             </v-tabs-items>
         </v-main>
@@ -48,6 +49,7 @@
 import {VARS} from '@/utils/utils.mjs';
 import GlobalNotificationModal from "@/components/GlobalNotificationModal";
 import EmailSender from '@/views/email-sender/Main';
+import HelpPage from '@/views/help/Main';
 
 export default {
     name: 'App',
@@ -56,7 +58,8 @@ export default {
     }),
     components: {
         GlobalNotificationModal,
-        EmailSender
+        EmailSender,
+        HelpPage
     },
     beforeCreate() {
         this.$store.dispatch('init');
