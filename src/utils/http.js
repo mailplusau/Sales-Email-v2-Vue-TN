@@ -68,10 +68,7 @@ export default {
                 .end((err, res) => {
                     let errorMessage = err || (res.body?.error || null);
                     if (errorMessage) reject(errorMessage);
-                    else {
-                        console.log(res);
-                        resolve({emailSubject: res.headers['custom-header-subjectline'], emailBody: res.text});
-                    }
+                    else resolve({emailSubject: res.headers['custom-header-subjectline'], emailBody: res.text});
                 });
         });
     }

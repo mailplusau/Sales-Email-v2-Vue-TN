@@ -48,6 +48,7 @@ const state = {
     functionTabs: {
         selected: 0,
         options: [],
+        visited: [],
     }
 };
 
@@ -63,6 +64,7 @@ const getters = {
 const mutations = {
     constructFunctionTabs : (state, $nextTick) => {
         state.functionTabs.options.splice(0);
+        state.functionTabs.visited.splice(0);
         let tabs = state.functionTabs.options;
         let selected = state.salesFlags.selected;
         let {CLOSED_WON, OPP_WITH_VALUE, FREE_TRIAL} = VARS.salesOptions;
@@ -83,16 +85,25 @@ const mutations = {
         
         $nextTick(() => {
             state.functionTabs.selected = 1;
+            _recordVisitedFunctionTab(state, 1);
         })
+    },
+
+    recordVisitedFunctionTab : (state, selectedFunctionTab) => {
+        _recordVisitedFunctionTab(state, selectedFunctionTab);
     },
     toNextFunctionTab : state => {
         state.functionTabs.selected = state.functionTabs.selected < state.functionTabs.options.length ?
             state.functionTabs.selected + 1 : 1;
+
+        _recordVisitedFunctionTab(state, state.functionTabs.selected);
     },
     toPrevFunctionTab : state => {
         state.functionTabs.selected = state.functionTabs.selected > 1 ?
             state.functionTabs.selected - 1 :
             state.functionTabs.options.length - 1;
+
+        _recordVisitedFunctionTab(state, state.functionTabs.selected)
     },
 
     setSalesRepIdForAppointment : (state, id) => { state.appointmentDetails.salesRepId = id; }
@@ -245,6 +256,12 @@ const actions = {
         }, {root: true});
     }
 };
+
+function _recordVisitedFunctionTab(state, selectedTab) {
+    let set = new Set(state.functionTabs.visited);
+    set.add(selectedTab);
+    state.functionTabs.visited = [...set];
+}
 
 function getFormattedDate() {
     const today = new Date();

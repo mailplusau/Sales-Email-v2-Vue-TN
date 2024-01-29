@@ -20,12 +20,13 @@
             </v-col>
 
             <v-col xl="7" lg="10" md="12" cols="12">
-                <v-stepper v-show="selected.length" v-model="$store.getters['email-sender/functionTabs'].selected" elevation="0">
+                <v-stepper v-show="selected.length" v-model="functionTabNumber" elevation="0">
                     <v-stepper-header class="background text-center" v-show="tabs.length > 1">
                         <template v-for="(tabItem, index) in tabs">
-                            <v-stepper-step :key="tabItem.name" :editable="index < tab"
-                                            :complete="tab > index + 1" edit-icon="mdi-check"
-                                            :color="tab === index + 1 ? 'pink' : 'primary'"
+                            <v-stepper-step :key="tabItem.name"
+                                            :editable="$store.getters['email-sender/functionTabs'].visited.includes(index + 1)"
+                                            :complete="functionTabNumber > index + 1" edit-icon="mdi-check"
+                                            :color="functionTabNumber === index + 1 ? 'pink' : 'primary'"
                                             :step="index + 1">
                                 {{ tabItem.label }}
                             </v-stepper-step>
@@ -99,8 +100,14 @@ export default {
         selected() {
             return this.$store.getters['email-sender/salesFlags'].selected;
         },
-        tab() {
-            return this.$store.getters['email-sender/functionTabs'].selected;
+        functionTabNumber: {
+            get() {
+                return parseInt(this.$store.getters['email-sender/functionTabs'].selected);
+            },
+            set(val) {
+                this.$store.getters['email-sender/functionTabs'].selected = val;
+                this.$store.commit('email-sender/recordVisitedFunctionTab', val);
+            }
         },
         tabs() {
             return this.$store.getters['email-sender/functionTabs'].options;

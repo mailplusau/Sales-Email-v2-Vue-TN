@@ -25,8 +25,6 @@ export default {
     },
     methods: {
         _initEditor() {
-            console.log('init summernote')
-
             let vm = this;
             let config = this.config;
 
@@ -49,7 +47,6 @@ export default {
 
         },
         reInitEditor() {
-            console.log('re init summernote')
             $(this.$el).summernote('destroy');
 
             this._initEditor();

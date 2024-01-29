@@ -153,6 +153,9 @@ export default {
             if (!res) return;
             this.$store.commit('email-sender/toNextFunctionTab');
         },
+        getValidationStatus() {
+            return this.$refs.form.validate();
+        },
         goToThis() {
             this.$store.getters['email-sender/functionTabs'].selected = this.tabsIndex + 1;
         },

@@ -4,7 +4,7 @@
             <v-col cols="12" v-for="(tabItem) in $store.getters['email-sender/functionTabs'].options" :key="tabItem.name">
                 <ServiceAndPriceTab v-if="tabItem.name === emailSenderTabNames.SERVICE_PRICE" display-only />
                 <FormAndBrochureTab v-else-if="tabItem.name === emailSenderTabNames.FORM_BROCHURE" display-only />
-                <EmailAndCallbackTab v-else-if="tabItem.name === emailSenderTabNames.EMAIL_CALLBACK" display-only />
+                <EmailAndCallbackTab ref="emailAndCallbackTab" v-else-if="tabItem.name === emailSenderTabNames.EMAIL_CALLBACK" display-only />
             </v-col>
 
             <v-col cols="12">
@@ -78,6 +78,9 @@ export default {
     }),
     methods: {
         send() {
+            if (!this.$refs?.emailAndCallbackTab[0]?.getValidationStatus())
+                return this.$store.commit('displayErrorGlobalModal', {title: 'Error', message: 'Please complete the email.'});
+
             this.dialog.title = 'Sending email';
             this.dialog.message = 'An email will be sent to the specified contact. Proceed?';
             this.dialog.open = true;

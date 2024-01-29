@@ -64,7 +64,6 @@ const actions = {
 
                 context.state.associatedSalesRepOfPartner.id = id;
                 context.state.associatedSalesRepOfPartner.name = name;
-                console.log(context.state.associatedSalesRepOfPartner);
             } catch (e) {console.error(e);}
         }
     },
