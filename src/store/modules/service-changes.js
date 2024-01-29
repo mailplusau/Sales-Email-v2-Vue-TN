@@ -57,7 +57,7 @@ const actions = {
 
             let freqArray = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Adhoc']
             context.state.data = Array.isArray(data) ? data.map(item => {
-                let freqIdArray = item['custrecord_servicechg_new_freq'].split(',');
+                let freqIdArray = item['custrecord_servicechg_new_freq'].split(',').sort();
 
                 let newFreqStr = freqIdArray.map(id => freqArray[parseInt(id) - 1]).join(', ');
 

@@ -8,13 +8,20 @@ const state = {
         entityid: '',
         companyname: '',
         entitystatus: '',
+        partner: '',
     },
+
+    associatedSalesRepOfPartner: {
+        id: null,
+        name: '',
+    }
 };
 
 const getters = {
     id : state => state.id,
     details : state => state.details,
     status : state => parseInt(state.details.entitystatus),
+    salesRep : state => state.associatedSalesRepOfPartner
 };
 
 const mutations = {
@@ -26,6 +33,7 @@ const actions = {
         if (!context.state.id) return;
 
         context.dispatch('getDetails').then();
+        context.dispatch('getSalesRepOfPartner').then();
     },
     getDetails : async (context) => {
         if (context.state.id) {
@@ -44,6 +52,19 @@ const actions = {
                 }
 
                 context.state.busy = true;
+            } catch (e) {console.error(e);}
+        }
+    },
+    getSalesRepOfPartner : async (context) => {
+        if (context.state.id) {
+            try {
+                let {id, name} = await http.get('getSalesRepOfPartner', {
+                    customerId: context.state.id,
+                });
+
+                context.state.associatedSalesRepOfPartner.id = id;
+                context.state.associatedSalesRepOfPartner.name = name;
+                console.log(context.state.associatedSalesRepOfPartner);
             } catch (e) {console.error(e);}
         }
     },

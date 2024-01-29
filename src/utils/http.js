@@ -59,6 +59,21 @@ export default {
                     }
                 });
         });
+    },
+    getEmailTemplateFromRenderer(url, params) {
+        return new Promise((resolve, reject) => {
+            superagent.get(url)
+                .set("Content-Type", "application/json")
+                .query(params)
+                .end((err, res) => {
+                    let errorMessage = err || (res.body?.error || null);
+                    if (errorMessage) reject(errorMessage);
+                    else {
+                        console.log(res);
+                        resolve({emailSubject: res.headers['custom-header-subjectline'], emailBody: res.text});
+                    }
+                });
+        });
     }
 }
 

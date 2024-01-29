@@ -14,19 +14,7 @@
                                     :readonly="displayOnly" :disabled="displayOnly" :hide-details="displayOnly"
                                     v-model="emailDetails.productTracking" dense></v-autocomplete>
                 </v-col>
-                <v-col md="6" cols="12" v-if="!progressWithoutEmail">
-                    <v-autocomplete prefix="Template:" v-model="emailDetails.emailTemplateId"
-                                    :items="emailTemplates.data"
-                                    item-value="custrecord_camp_comm_email_template"
-                                    item-text="name"
-                                    :loading="emailTemplates.busy || emailDetails.busy"
-                                    :disabled="emailTemplates.busy || emailDetails.busy || displayOnly"
-                                    @change="handleSelectedEmailTemplateChanged"
-                                    :rules="[v => validate(v, 'required')]"
-                                    :readonly="displayOnly" :hide-details="displayOnly"
-                                    dense placeholder="(required)"></v-autocomplete>
-                </v-col>
-                <v-col cols="12">
+                <v-col md="6" cols="12">
                     <v-autocomplete prefix="Recipient:"
                                     :items="recipientList"
                                     :rules="[v => validate(v, 'required', 'Recipient')]"
@@ -50,6 +38,19 @@
                             </v-chip>
                         </template>
                     </v-combobox>
+                </v-col>
+                <v-col cols="12" v-if="!progressWithoutEmail">
+                    <v-autocomplete prefix="Template:" v-model="emailDetails.emailTemplateId"
+                                    :items="emailTemplates.data"
+                                    item-value="internalid"
+                                    item-text="name"
+                                    :loading="emailTemplates.busy || emailDetails.busy"
+                                    :disabled="!emailDetails.recipient || emailTemplates.busy || emailDetails.busy || displayOnly"
+                                    @change="handleSelectedEmailTemplateChanged"
+                                    :rules="[v => validate(v, 'required')]"
+                                    :readonly="displayOnly" :hide-details="displayOnly"
+                                    dense
+                                    :placeholder="!emailDetails.recipient ? 'Please select a recipient first' : '(required)'"></v-autocomplete>
                 </v-col>
                 <v-col cols="12" v-if="!progressWithoutEmail">
                     <v-text-field prefix="Subject:" v-model="emailDetails.emailSubject" :disabled="emailDetails.busy || displayOnly"
@@ -186,9 +187,9 @@ export default {
     },
     watch: {
         'emailDetails.emailBody': function() {
-            this.$nextTick(() => {
-                this.$refs['summernote-editor']?.reInitEditor();
-            })
+            // this.$nextTick(() => {
+            //     this.$refs['summernote-editor']?.reInitEditor();
+            // })
         }
     }
 };

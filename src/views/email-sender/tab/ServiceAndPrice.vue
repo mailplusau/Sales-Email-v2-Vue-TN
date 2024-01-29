@@ -111,9 +111,9 @@ export default {
     },
     data: () => ({
         headers: [
-            { text: 'Service Name', value: 'custrecord_servicechg_service_text', sortable: false, },
-            { text: 'Type', value: 'custrecord_servicechg_type', sortable: false, },
-            { text: 'Date Effective', value: 'custrecord_servicechg_date_effective', sortable: false, },
+            { text: 'Service Name', value: 'custrecord_servicechg_service_text', sortable: false, align: 'start' },
+            { text: 'Type', value: 'custrecord_servicechg_type', sortable: false, align: 'center' },
+            { text: 'Date Effective', value: 'custrecord_servicechg_date_effective', sortable: false, align: 'center' },
             { text: 'Old Price', value: 'custrecord_service_price', sortable: false, align: 'center' },
             { text: 'New Price', value: 'custrecord_servicechg_new_price', sortable: false, align: 'center' },
             { text: 'Frequency', value: 'custrecord_servicechg_new_freq_text', sortable: false, align: 'center'},

@@ -289,6 +289,20 @@ const getOperations = {
 
         _writeResponseJson(response, data);
     },
+    'getSalesRepOfPartner': function (response, {customerId}) {
+        let salesRep = {};
+        let salesRepId = NS_MODULES.search['lookupFields']({
+            type: 'customer',
+            id: customerId,
+            columns: ['partner.custentity_sales_rep_assigned']
+        })['partner.custentity_sales_rep_assigned'][0].value;
+
+        let employeeRecord = NS_MODULES.record.load({type: 'employee', id: salesRepId});
+        salesRep['id'] = salesRepId;
+        salesRep['name'] = `${employeeRecord.getValue({fieldId: 'firstname'})} ${employeeRecord.getValue({fieldId: 'lastname'})}`;
+
+        _writeResponseJson(response, salesRep);
+    },
     'getEmailTemplate' : function (response, {customerId, emailTemplateId}) {
         let mergeResult = NS_MODULES.render.mergeEmail({
             templateId: emailTemplateId,

@@ -121,9 +121,25 @@ const actions = {
         context.state.emailDetails.busy = true;
 
         try {
-            let {emailSubject, emailBody} = await http.get('getEmailTemplate', {
-                emailTemplateId: context.state.emailDetails.emailTemplateId
-            });
+            let contactIndex = context.rootGetters['contacts/all'].data.findIndex(item => item.internalid === context.state.emailDetails.recipient);
+            let contact = context.rootGetters['contacts/all'].data[contactIndex] || null;
+
+            let params = {
+                script: 395,
+                deploy: 1,
+                compid: 1048144,
+                h: '6d4293eecb3cb3f4353e',
+                rectype: 'customer',
+                recid: context.rootGetters['customer/id'],
+                template: context.state.emailDetails.emailTemplateId,
+                salesrep: context.rootGetters['customer/salesRep'].id,
+                salesRepName: context.rootGetters['customer/salesRep'].name,
+                dear: contact.firstname,
+                contactid: context.state.emailDetails.recipient,
+                userid: context.rootGetters['user/id'],
+            }
+
+            let {emailSubject, emailBody} = await http.getEmailTemplateFromRenderer(baseURL + '/app/site/hosting/scriptlet.nl', params);
 
             context.state.emailDetails.emailBody = emailBody;
             context.state.emailDetails.emailSubject = emailSubject;
