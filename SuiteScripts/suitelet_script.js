@@ -374,10 +374,15 @@ const postOperations = {
 
         let {record, runtime, email, file} = NS_MODULES;
         let customerRecord = record.load({type: 'customer', id: customerId});
+        let customerStatus = parseInt(customerRecord.getValue({fieldId: 'entitystatus'}));
         let salesRecord = salesRecordId ? record.load({type: 'customrecord_sales', id: salesRecordId}) : null;
         let salesCampaignRecord = null, contactRecord = null;
 
+        let idOfLastAssignSalesRep = runtime['getCurrentUser']().id;
+
         if (salesRecord) { // update sales record and get sales campaign record.
+            idOfLastAssignSalesRep = salesRecord.getValue({fieldId: 'custrecord_sales_assigned'});
+
             salesRecord.setValue({fieldId: 'custrecord_sales_email_count', value: parseInt(salesRecord.getValue({fieldId: 'custrecord_sales_email_count'})) + 1});
             salesRecord.setValue({fieldId: 'custrecord_sales_assigned', value: runtime['getCurrentUser']().id});
             salesRecord.setValue({fieldId: 'custrecord_sales_callbackdate', value: ''});
@@ -413,7 +418,9 @@ const postOperations = {
             });
 
             email.send({
-                author: userRole === 3 || userRole === 1032 ? 112209 : salesRepId,
+                // Set the author of NetSuite if email is coming from Data Admin or Admin. Otherwise, use sales rep of
+                // franchisee as author if customer is Signed (13) or sales rep that was last assigned to sales record if not Signed
+                author: userRole === 3 || userRole === 1032 ? 112209 : (customerStatus === 13 ? salesRepId : idOfLastAssignSalesRep),
                 subject: `${customerEntityId} ${customerName} - ${emailDetails.emailSubject}`,
                 body: emailDetails.emailBody,
                 // recipients: ['tim.nguyen@mailplus.com.au'], // TODO: testing
