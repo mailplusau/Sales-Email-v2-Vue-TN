@@ -30,14 +30,14 @@
             </v-row>
         </v-form>
 
-        <v-dialog v-model="dialog.open" max-width="350">
+        <v-dialog v-model="dialog.open" max-width="400">
             <v-card class="background">
                 <v-card-title class="text-h6">
                     Lost Lead/Customer?
                 </v-card-title>
 
                 <v-card-text class="subtitle-1">
-                    This will mark <b>{{customerDetails.entityid}} - {{customerDetails.companyname}}</b> as Lost
+                    This will mark <b>{{customerDetails.entityid}} - {{customerDetails.companyname}}</b> as <b class="red--text">LOST</b>
                     in NetSuite. Proceed?
                 </v-card-text>
 

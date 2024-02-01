@@ -11,7 +11,7 @@ const state = {
     formsToSend: {
         options: [
             {value: 179, text: 'SC - Proposal - SCF', filename: 'proposal_scf'},
-            {value: 159, text: 'Service Commencement Form', filename: 'scf'},
+            // {value: 159, text: 'Service Commencement Form', filename: 'scf'},
             {value: 94, text: 'Standing Order Form', filename: 'standing_order'},
             {value: 186, text: 'Change of Entity Form', filename: 'coe'},
         ],
@@ -133,27 +133,29 @@ const actions = {
 
         try {
             let contactIndex = context.rootGetters['contacts/all'].data.findIndex(item => item.internalid === context.state.emailDetails.recipient);
-            let contact = context.rootGetters['contacts/all'].data[contactIndex] || null;
+            let contact = context.rootGetters['contacts/all'].data[contactIndex];
 
-            let params = {
-                script: 395,
-                deploy: 1,
-                compid: 1048144,
-                h: '6d4293eecb3cb3f4353e',
-                rectype: 'customer',
-                recid: context.rootGetters['customer/id'],
-                template: context.state.emailDetails.emailTemplateId,
-                salesrep: context.rootGetters['customer/salesRep'].id,
-                salesRepName: context.rootGetters['customer/salesRep'].name,
-                dear: contact.firstname,
-                contactid: context.state.emailDetails.recipient,
-                userid: context.rootGetters['user/id'],
+            if (contact) {
+                let params = {
+                    script: 395,
+                    deploy: 1,
+                    compid: 1048144,
+                    h: '6d4293eecb3cb3f4353e',
+                    rectype: 'customer',
+                    recid: context.rootGetters['customer/id'],
+                    template: context.state.emailDetails.emailTemplateId,
+                    salesrep: context.rootGetters['customer/salesRep'].id,
+                    salesRepName: context.rootGetters['customer/salesRep'].name,
+                    dear: contact.firstname,
+                    contactid: context.state.emailDetails.recipient,
+                    userid: context.rootGetters['user/id'],
+                }
+
+                let {emailSubject, emailBody} = await http.getEmailTemplateFromRenderer(baseURL + '/app/site/hosting/scriptlet.nl', params);
+
+                context.state.emailDetails.emailBody = emailBody;
+                context.state.emailDetails.emailSubject = emailSubject;
             }
-
-            let {emailSubject, emailBody} = await http.getEmailTemplateFromRenderer(baseURL + '/app/site/hosting/scriptlet.nl', params);
-
-            context.state.emailDetails.emailBody = emailBody;
-            context.state.emailDetails.emailSubject = emailSubject;
         } catch (e) {
             console.error(e);
             context.state.emailDetails.emailTemplateId = null;
