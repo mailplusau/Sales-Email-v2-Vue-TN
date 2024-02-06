@@ -149,6 +149,8 @@ const actions = {
                     dear: contact.firstname,
                     contactid: context.state.emailDetails.recipient,
                     userid: context.rootGetters['user/id'],
+                    commdate: context.rootGetters['service-changes/commDate'],
+                    commreg: context.rootGetters['service-changes/commRegId']
                 }
 
                 let {emailSubject, emailBody} = await http.getEmailTemplateFromRenderer(baseURL + '/app/site/hosting/scriptlet.nl', params);

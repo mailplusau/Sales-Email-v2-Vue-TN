@@ -223,13 +223,16 @@ const getOperations = {
                 {name: 'custrecord_commreg_sales_record', operator: 'is', values: salesRecordId},
                 {name: 'custrecord_trial_status', operator: 'anyof', values: [9, 10]}, // Scheduled (9) or Quote (10)
             ],
-            columns: ['internalid']
+            columns: ['internalid', 'custrecord_comm_date']
         }).run().each(resultSet => {
-            data.push(resultSet.id);
+            data.push({
+                commRegId: resultSet.id,
+                commDate: resultSet.getValue('custrecord_comm_date')
+            });
             return true;
         });
 
-        _writeResponseJson(response, {commRegId: data[0]}); // return the first result
+        _writeResponseJson(response, data[0]); // return the first result
     },
     'getScheduledServiceChanges' : function (response, {customerId, commRegId}) {
         let {search} = NS_MODULES;

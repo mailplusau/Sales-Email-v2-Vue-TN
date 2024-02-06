@@ -5,6 +5,7 @@ const state = {
     busy: false,
     salesRecordId: null,
     commRegId: null,
+    commDate: null,
 
     iframeDialog: {
         open: false,
@@ -17,6 +18,7 @@ const getters = {
     busy: state => state.busy,
     salesRecordId : state => state.salesRecordId,
     commRegId : state => state.commRegId,
+    commDate : state => state.commDate,
 
     iframeDialog : state => state.iframeDialog,
 };
@@ -47,6 +49,7 @@ const actions = {
             });
 
             context.state.commRegId = parseInt(data?.commRegId) || null
+            context.state.commDate = data?.commDate || null
         }
 
         if (context.state.commRegId) {
