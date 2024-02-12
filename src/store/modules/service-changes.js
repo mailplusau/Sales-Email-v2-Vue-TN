@@ -39,13 +39,13 @@ const actions = {
         await context.dispatch('get');
     },
     get : async context => {
-        if (!context.state.salesRecordId) return;
+        if (!context.rootGetters['sales-records/selected'].internalid) return;
 
         context.state.busy = true;
 
         if (!context.state.commRegId) {
             let data = await http.get('getCommRegIdFromSalesRecordId', {
-                salesRecordId: context.state.salesRecordId
+                salesRecordId: context.rootGetters['sales-records/selected'].internalid
             });
 
             context.state.commRegId = parseInt(data?.commRegId) || null

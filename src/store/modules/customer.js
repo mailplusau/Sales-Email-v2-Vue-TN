@@ -21,7 +21,15 @@ const getters = {
     id : state => state.id,
     details : state => state.details,
     status : state => parseInt(state.details.entitystatus),
-    salesRep : state => state.associatedSalesRepOfPartner
+    salesRep : state => state.associatedSalesRepOfPartner,
+
+    isInLpoProject : (state, getters, rootState, rootGetters) => {
+        let index = rootGetters['franchisees/ofLPOProject']
+            .findIndex(item => parseInt(item.custentity_lpo_linked_franchisees) === parseInt(state.details.partner))
+
+        // Franchisee is linked to LPO and campaign in sales record set as LPO (69)
+        return index >= 0 && parseInt(rootGetters['sales-records/selected'].custrecord_sales_campaign) === 69;
+    }
 };
 
 const mutations = {

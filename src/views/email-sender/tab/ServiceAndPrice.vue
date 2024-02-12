@@ -131,7 +131,7 @@ export default {
         updateService() {
             let params = {
                 custid: this.$store.getters['customer/id'], //1734126
-                salesrecordid: this.$store.getters['service-changes/salesRecordId'], //361585
+                salesrecordid: this.$store.getters['sales-records/selected'].internalid, //361585
                 salesrep: 'F',
                 sendemail: 'T',
                 closedwon: this.$store.getters['paramFlags'].closedWon ? 'T' : 'F',

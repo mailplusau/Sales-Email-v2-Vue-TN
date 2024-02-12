@@ -232,7 +232,7 @@ const getOperations = {
             return true;
         });
 
-        _writeResponseJson(response, data[0]); // return the first result
+        _writeResponseJson(response, data.length ? data[0] : {}); // return the first result
     },
     'getScheduledServiceChanges' : function (response, {customerId, commRegId}) {
         let {search} = NS_MODULES;
@@ -367,11 +367,54 @@ const getOperations = {
         });
 
         _writeResponseJson(response, data);
+    },
+    'getFranchiseesOfLPOProject' : function (response) {
+        let data = [];
+        NS_MODULES.search.create({
+            type: "customer",
+            filters:
+                [
+                    ["status","anyof","13"],
+                    "AND",
+                    ["companyname","contains","LPO - Parent"],
+                    "AND",
+                    ["parentcustomer.internalid","anyof","@NONE@"],
+                    "AND",
+                    ["leadsource","anyof","281559"]
+                ],
+            columns: ['internalid', 'entityid', 'companyname', 'custentity_lpo_linked_franchisees']
+        }).run().each(result => {
+            let franchiseeIds = result.getValue('custentity_lpo_linked_franchisees').split(',');
+
+            for (let franchiseeId of franchiseeIds) {
+                let tmp = {};
+
+                for (let column of result.columns)
+                    tmp[column.name] = result.getValue(column.name);
+
+                tmp['custentity_lpo_linked_franchisees'] = franchiseeId;
+
+                data.push(tmp);
+            }
+
+            return true;
+        });
+
+        _writeResponseJson(response, data);
+    },
+    'getSalesRecord' : function (response, {salesRecordId, fieldIds}) {
+        let salesRecord = NS_MODULES.record.load({type: 'customrecord_sales', id: salesRecordId});
+        let tmp = {};
+
+        for (let fieldId of fieldIds)
+            tmp[fieldId] = salesRecord.getValue({fieldId});
+
+        _writeResponseJson(response, tmp);
     }
 }
 
 const postOperations = {
-    'sendSalesEmail' : function (response, {customerId, salesRecordId, base64StringArray, emailDetails, salesOutcome}) {
+    'sendSalesEmail' : function (response, {customerId, salesRecordId, base64StringArray, emailDetails, salesOutcome, localUTCOffset}) {
         if (!processSalesOutcomes[salesOutcome]) // check if an outcome is supported
             return _writeResponseJson(response, {error: `Outcome [${salesOutcome}] not supported.`})
 
@@ -426,7 +469,6 @@ const postOperations = {
                 author: userRole === 3 || userRole === 1032 ? 112209 : (customerStatus === 13 ? salesRepId : idOfLastAssignSalesRep),
                 subject: `${customerEntityId} ${customerName} - ${emailDetails.emailSubject}`,
                 body: emailDetails.emailBody,
-                // recipients: ['tim.nguyen@mailplus.com.au'], // TODO: testing
                 recipients: [contactRecord.getValue({fieldId: 'email'})],
                 cc: [...emailDetails.cc],
                 bcc: [userRole === 3 || userRole === 1032 ? runtime['getCurrentUser']().email : salesRepEmail],
@@ -439,7 +481,7 @@ const postOperations = {
         }
 
         // process outcomes
-        processSalesOutcomes[salesOutcome]({emailDetails, phoneCallRecord, customerRecord, salesRecord, salesCampaignRecord, contactRecord});
+        processSalesOutcomes[salesOutcome]({emailDetails, phoneCallRecord, customerRecord, salesRecord, salesCampaignRecord, contactRecord, localUTCOffset});
 
         // save the records.
         salesRecord?.save({ignoreMandatoryFields: true});
@@ -618,7 +660,6 @@ const processSalesOutcomes = {
                     subject: emailTemplateRecord.getValue({fieldId: 'custrecord_camp_comm_subject'}),
                     body: emailHtml,
                     recipients: [_getEmailAddressOfPartner(customerId)],
-                    // recipients: ['tim.nguyen@mailplus.com.au'], // TODO: testing
                     cc: [runtime['getCurrentUser']().email],
                     relatedRecords: {
                         'entityId': customerId
@@ -631,7 +672,7 @@ const processSalesOutcomes = {
     },
     [VARS.salesOptions.OPP_WITH_VALUE.value]({emailDetails, phoneCallRecord, customerRecord, salesRecord, salesCampaignRecord}) {
         if (parseInt(salesCampaignRecord?.getValue({fieldId: 'custrecord_salescampaign_recordtype'})) !== 1) {
-            customerRecord.setValue({fieldId: 'entitystatus', value: 58}); // PROSPECT-Opportunity
+            customerRecord.setValue({fieldId: 'entitystatus', value: 50}); // PROSPECT-Quote Sent
             customerRecord.setValue({fieldId: 'custentity_date_lead_quote_sent', value: new Date()});
         }
 
@@ -686,7 +727,7 @@ const processSalesOutcomes = {
         }
 
     },
-    [VARS.salesOptions.NO_SALE.value]({emailDetails, phoneCallRecord, customerRecord, salesRecord, salesCampaignRecord}) {
+    [VARS.salesOptions.NO_SALE.value]({emailDetails, phoneCallRecord, customerRecord, salesRecord, salesCampaignRecord, localUTCOffset}) {
         let lostReason = _getLostReasonFromId(emailDetails.lostReason);
 
         if (parseInt(salesCampaignRecord?.getValue({fieldId: 'custrecord_salescampaign_recordtype'})) !== 1) {
@@ -694,7 +735,7 @@ const processSalesOutcomes = {
                 customerRecord.setValue({fieldId: 'entitystatus', value: 22}); // SUSPECT-Customer - Lost
             else customerRecord.setValue({fieldId: 'entitystatus', value: 59}); // SUSPECT-Lost
 
-            customerRecord.setValue({fieldId: 'custentity_date_lead_lost', value: new Date()});
+            customerRecord.setValue({fieldId: 'custentity_date_lead_lost', value: _getLocalTimeFromOffset(localUTCOffset)});
             customerRecord.setValue({fieldId: 'custentity_service_cancellation_reason', value: emailDetails.lostReason});
         }
 
@@ -712,7 +753,7 @@ const processSalesOutcomes = {
         if (parseInt(customerRecord.getValue({fieldId: 'leadsource'})) === -4) // lead generated by zee, informing them of lost lead
             _informFranchiseeOfLostLeadThatTheyEntered(customerRecord, lostReason, emailDetails.lostNote);
 
-        _createUserNote(customerRecord.getValue({fieldId: 'internalid'}), 'Lead Lost - ' + lostReason, emailDetails.lostNote);
+        _createUserNote(customerRecord.getValue({fieldId: 'id'}), 'Lead Lost - ' + lostReason, emailDetails.lostNote);
     },
     [VARS.salesOptions.INV_TO_PORTAL.value]({emailDetails, phoneCallRecord, customerRecord, contactRecord, salesRecord}) {
         let customerId = customerRecord.getValue({fieldId: 'id'});
@@ -751,6 +792,117 @@ const processSalesOutcomes = {
             for (let fieldId of fieldsToReset)
                 salesRecord.setValue({fieldId, value: originalSalesRecord.getValue({fieldId})});
         }
+    },
+    [VARS.salesOptions.FREE_TRIAL.value]({emailDetails, phoneCallRecord, customerRecord, salesRecord, salesCampaignRecord}) {
+        let {search, record, https, url, runtime, email} = NS_MODULES;
+        let customerId = customerRecord.getValue({fieldId: 'id'});
+
+        if (parseInt(salesCampaignRecord?.getValue({fieldId: 'custrecord_salescampaign_recordtype'})) !== 1) {
+            if (parseInt(customerRecord.getValue({fieldId: 'entitystatus'})) !== 13)
+                customerRecord.setValue({fieldId: 'entitystatus', value: 32}); // Customer-Free Trial (32)
+
+            customerRecord.setValue({fieldId: 'custentity_date_prospect_opportunity', value: new Date()});
+            customerRecord.setValue({fieldId: 'custentity_cust_closed_won', value: true});
+            customerRecord.setValue({fieldId: 'custentity_mpex_surcharge', value: 1});
+            customerRecord.setValue({fieldId: 'custentity_mp_product_tracking', value: emailDetails.productTracking});
+
+            _sendReminderEmailToDataAdmins(customerRecord)
+        }
+
+        phoneCallRecord.setValue({fieldId: 'title', value: salesCampaignRecord.getValue({fieldId: 'name'}) + ' - Trial SCF Sent'});
+        phoneCallRecord.setValue({fieldId: 'message', value: emailDetails.lostNote}); // looks weird but this should be empty, so it's fine
+        phoneCallRecord.setValue({fieldId: 'custevent_call_outcome', value: 24}); // Send Form (24)
+
+        if (salesRecord) {
+            salesRecord.setValue({fieldId: 'custrecord_sales_completed', value: false});
+            salesRecord.setValue({fieldId: 'custrecord_sales_formsent', value: true});
+            salesRecord.setValue({fieldId: 'custrecord_sales_inuse', value: false});
+            salesRecord.setValue({fieldId: 'custrecord_sales_outcome', value: 14}); // Send Form (14)
+        }
+
+        let commRegs = [];
+        let billingStartDate;
+        let formattedBillingStartDate;
+        search.create({
+            type: 'customrecord_commencement_register',
+            filters: [
+                {name: 'custrecord_commreg_sales_record', operator: 'is', values: salesRecord.getValue({fieldId: 'id'})},
+                {name: 'custrecord_trial_status', operator: 'anyof', values: [2, 9, 10]}, // Active (2) | Scheduled (9) | Quote (10)
+                {name: 'custrecord_customer', operator: 'anyof', values: customerId},
+            ],
+            columns: ['internalid', 'custrecord_date_entry', 'custrecord_sale_type', 'custrecord_franchisee', 'custrecord_in_out',
+                'custrecord_customer', 'custrecord_trial_status', 'custrecord_comm_date_signup', 'custrecord_trial_expiry', 'custrecord_comm_date']
+        }).run().each(item => {
+            let tmp = {};
+
+            for (let column of item.columns) {
+                tmp[column.name + '_text'] = item.getText(column);
+                tmp[column.name] = item.getValue(column);
+            }
+
+            commRegs.push(tmp);
+        });
+
+        if (commRegs.length === 1) {
+            let trial_end_date = commRegs[0]['custrecord_trial_expiry']
+            let trial_end_date_split = trial_end_date.split('/');
+            billingStartDate = new Date(trial_end_date_split[2] + "-" + trial_end_date_split[1] + "-" + trial_end_date_split[0]);
+            billingStartDate.setDate(billingStartDate.getDate() + 1)
+
+            let yyyy = billingStartDate.getFullYear();
+            let mm = billingStartDate.getMonth() + 1; // Months start at 0!
+            let dd = billingStartDate.getDate();
+
+            if (dd < 10) dd = '0' + dd;
+            if (mm < 10) mm = '0' + mm;
+
+            formattedBillingStartDate = dd + '/' + mm + '/' + yyyy;
+        }
+
+        // TODO: ask why don't we use the contact that was selected
+        search.create({
+            type: "contact",
+            filters:
+                [
+                    ["isinactive", "is", "F"], 'AND',
+                    ["company", "is", customerId], 'AND',
+                    ['email', 'isnotempty', '']
+                ],
+            columns: ['internalid']
+        }).run().each(resultSet => {
+            let emailTemplateRecord = record.load({type: 'customrecord_camp_comm_template', id: 150})
+            let httpsGetResult = https.get({url: url.format({
+                    domain: 'https://1048144.extforms.netsuite.com/app/site/hosting/scriptlet.nl',
+                    params: {
+                        script: 395,
+                        deploy: 1,
+                        compid: 1048144,
+                        h: '6d4293eecb3cb3f4353e',
+                        rectype: 'customer',
+                        template: 150,
+                        recid: customerId,
+                        salesrep: null,
+                        dear: null,
+                        contactid: resultSet.id,
+                        userid: runtime['getCurrentUser']().id,
+                        commdate: commRegs[0]['custrecord_comm_date'],
+                        trialenddate: commRegs[0]['custrecord_trial_expiry'],
+                        commreg: commRegs[0]['internalid'],
+                        billingstartdate: formattedBillingStartDate,
+                    }
+                })});
+            let emailHtml = httpsGetResult.body;
+
+            email.send({
+                author: runtime['getCurrentUser']().id,
+                subject: emailTemplateRecord.getValue({fieldId: 'custrecord_camp_comm_subject'}),
+                body: emailHtml,
+                recipients: [_getEmailAddressOfPartner(customerId)],
+                cc: [runtime['getCurrentUser']().email],
+                relatedRecords: {'entityId': customerId},
+                isInternalOnly: true
+            });
+        })
     }
 };
 
@@ -792,7 +944,6 @@ function _sendReminderEmailToDataAdmins(customerRecord) {
         author: 112209,
         subject: `${customerEntityId} ${customerName} - Signed Up - Please Check`,
         body: email_body2,
-        // recipients: ['tim.nguyen@mailplus.com.au'],  // TODO: testing
         recipients: ['fiona.harrison@mailplus.com.au', 'popie.popie@mailplus.com.au'],
         bcc: ['ankith.ravindran@mailplus.com.au'],
         relatedRecords: {
@@ -802,8 +953,18 @@ function _sendReminderEmailToDataAdmins(customerRecord) {
     });
 }
 
+function _getLocalTimeFromOffset(localUTCOffset) {
+    let today = new Date();
+    let serverUTCOffset = today.getTimezoneOffset();
+
+    let localTime = new Date();
+    localTime.setTime(today.getTime() + (serverUTCOffset - parseInt(localUTCOffset)) * 60 * 1000);
+
+    return localTime;
+}
+
 function _informFranchiseeOfLostLeadThatTheyEntered(customerRecord, lostReason, lostNote) {
-    let customerId = customerRecord.getValue({fieldId: 'internalid'});
+    let customerId = customerRecord.getValue({fieldId: 'id'});
     let customerName = customerRecord.getValue({fieldId: 'entityid'}) + ' ' + customerRecord.getValue({fieldId: 'companyname'});
     let partnerRecord = NS_MODULES.record.load({type: 'partner', id: customerRecord.getValue({fieldId: 'partner'})});
     let customerLink = 'https://1048144.app.netsuite.com/app/common/entity/custjob.nl?id=' + customerId;

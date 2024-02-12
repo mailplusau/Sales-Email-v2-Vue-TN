@@ -9,11 +9,10 @@ const state = {
     },
 
     formsToSend: {
-        options: [
-            {value: 179, text: 'SC - Proposal - SCF', filename: 'proposal_scf'},
-            // {value: 159, text: 'Service Commencement Form', filename: 'scf'},
+        options: [],
+        defaultOptions: [
             {value: 94, text: 'Standing Order Form', filename: 'standing_order'},
-            {value: 186, text: 'Change of Entity Form', filename: 'coe'},
+            {value: 186, text: 'Change of Entity Form', filename: 'coe'}
         ],
         selected: [],
     },
@@ -54,7 +53,23 @@ const state = {
 
 const getters = {
     salesFlags : state => state.salesFlags,
-    formsToSend : state => state.formsToSend,
+    formsToSend : (state, getters, rootState, rootGetters) => {
+        // TODO: filter
+        let arr = [...state.formsToSend.defaultOptions];
+        if (rootGetters['paramFlags'].oppWithValue || rootGetters['paramFlags'].closedWon) {
+            if (rootGetters['customer/isInLpoProject'])
+                arr.unshift({value: 411, text: 'LPO - Service Commencement Form', filename: 'lpo_scf'});
+            else arr.unshift({value: 159, text: 'Service Commencement Form', filename: 'scf'});
+        } else if (rootGetters['paramFlags'].freeTrial) {
+            if (rootGetters['customer/isInLpoProject'])
+                arr.unshift({value: 412, text: 'LPO Free Trial - Service Commencement Form', filename: 'lpo_trial_scf'});
+            else arr.unshift({value: 409, text: 'Free Trial - Service Commencement Form', filename: 'trial_scf'});
+        }
+
+        state.formsToSend.options = [...arr];
+
+        return state.formsToSend;
+    },
     emailTemplates : state => state.emailTemplates,
     emailDetails : state => state.emailDetails,
     appointmentDetails : state => state.appointmentDetails,
@@ -119,10 +134,23 @@ const actions = {
     getEmailTemplates : async context => {
         context.state.emailTemplates.busy = true;
 
-        context.state.emailTemplates.data = await http.get('getEmailTemplates', {
+        let data = await http.get('getEmailTemplates', {
             customerStatus: context.rootGetters['customer/status'],
             noSale: context.rootGetters['paramFlags'].noSale
         });
+
+        // TODO: filter
+        data = data.filter(item => {
+            if (context.rootGetters['paramFlags'].oppWithValue)
+                return ![177, 178, 179, 180].includes(parseInt(item.internalid));
+            else if (context.rootGetters['paramFlags'].closedWon)
+                return ![156, 178, 180, 183, 184].includes(parseInt(item.internalid));
+            else if (context.rootGetters['paramFlags'].freeTrial)
+                return ![156, 177, 179, 183, 184].includes(parseInt(item.internalid));
+            else return true;
+        })
+
+        context.state.emailTemplates.data = [...data];
 
         context.state.emailTemplates.busy = false;
     },
@@ -205,7 +233,7 @@ const actions = {
                     start: 'null',
                     end: 'null',
                     commreg: context.rootGetters['service-changes/commRegId'],
-                    salesrecordid: context.rootGetters['service-changes/salesRecordId'],
+                    salesrecordid: context.rootGetters['sales-records/selected'].internalid,
                 }
 
                 let base64Str = await http.getBase64PDF(baseURL + '/app/site/hosting/scriptlet.nl', params);
@@ -222,10 +250,11 @@ const actions = {
 
         await http.post('sendSalesEmail', {
             customerId: context.rootGetters['customer/id'],
-            salesRecordId: context.rootGetters['service-changes/salesRecordId'],
+            salesRecordId: context.rootGetters['sales-records/selected'].internalid,
             base64StringArray,
             emailDetails: context.state.emailDetails,
-            salesOutcome: context.state.salesFlags.selected[0]
+            salesOutcome: context.state.salesFlags.selected[0],
+            localUTCOffset: new Date().getTimezoneOffset(),
         });
 
         context.commit('displayBusyGlobalModal', {title: 'Redirecting', message: 'Processing complete. Redirecting to customer record page...'}, {root: true});
@@ -245,7 +274,7 @@ const actions = {
 
         await http.post('setAppointment', {
             customerId: context.rootGetters['customer/id'],
-            salesRecordId: context.rootGetters['service-changes/salesRecordId'],
+            salesRecordId: context.rootGetters['sales-records/selected'].internalid,
             appointmentDetails,
         });
 

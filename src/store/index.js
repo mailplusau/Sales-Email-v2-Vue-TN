@@ -91,6 +91,8 @@ const actions = {
         _readUrlParams(context);
 
         context.dispatch('user/init').then();
+        context.dispatch('franchisees/init').then();
+        context.dispatch('sales-records/init').then();
         context.dispatch('customer/init').then();
         context.dispatch('contacts/init').then();
         context.dispatch('service-changes/init').then();
@@ -126,7 +128,7 @@ function _readUrlParams(context) {
     if (!customParams) customParams = {};
 
     context.state['customer'].id = parseInt(params['custid'] || customParams['custid'] || null);
-    context.state['service-changes'].salesRecordId = parseInt(params['sales_record_id'] || customParams['sales_record_id'] || null);
+    context.state['sales-records'].selected.internalid = parseInt(params['sales_record_id'] || customParams['sales_record_id'] || null);
 
     // TODO: Priority system
     // callback > closedwon > oppwithvalue

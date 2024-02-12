@@ -124,7 +124,7 @@ export default {
             url.searchParams.set('start', 'null');
             url.searchParams.set('end', 'null');
             url.searchParams.set('commreg', this.$store.getters['service-changes/commRegId']);
-            url.searchParams.set('salesrecordid', this.$store.getters['service-changes/salesRecordId']);
+            url.searchParams.set('salesrecordid', this.$store.getters['sales-records/selected'].internalid);
 
             this.iframeSrc = url.toString();
             this.iframeTitle = `Previewing: ${name}`
