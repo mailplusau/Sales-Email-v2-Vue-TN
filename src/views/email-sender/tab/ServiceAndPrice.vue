@@ -136,6 +136,7 @@ export default {
                 sendemail: 'T',
                 closedwon: this.$store.getters['paramFlags'].closedWon ? 'T' : 'F',
                 oppwithvalue: this.$store.getters['paramFlags'].oppWithValue ? 'T' : 'F',
+                free_trial: this.$store.getters['paramFlags'].freeTrial ? 'T' : 'F',
                 savecustomer: 'F',
                 commreg: this.$store.getters['service-changes/commRegId'],
                 customid: 'customscript_sl_send_email_module',

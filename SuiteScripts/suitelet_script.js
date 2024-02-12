@@ -223,11 +223,12 @@ const getOperations = {
                 {name: 'custrecord_commreg_sales_record', operator: 'is', values: salesRecordId},
                 {name: 'custrecord_trial_status', operator: 'anyof', values: [9, 10]}, // Scheduled (9) or Quote (10)
             ],
-            columns: ['internalid', 'custrecord_comm_date']
+            columns: ['internalid', 'custrecord_comm_date', 'custrecord_trial_expiry']
         }).run().each(resultSet => {
             data.push({
                 commRegId: resultSet.id,
-                commDate: resultSet.getValue('custrecord_comm_date')
+                commDate: resultSet.getValue('custrecord_comm_date'),
+                commTrialExpiry: resultSet.getValue('custrecord_trial_expiry'),
             });
             return true;
         });
@@ -886,8 +887,8 @@ const processSalesOutcomes = {
                         contactid: resultSet.id,
                         userid: runtime['getCurrentUser']().id,
                         commdate: commRegs[0]['custrecord_comm_date'],
-                        trialenddate: commRegs[0]['custrecord_trial_expiry'],
                         commreg: commRegs[0]['internalid'],
+                        trialenddate: commRegs[0]['custrecord_trial_expiry'],
                         billingstartdate: formattedBillingStartDate,
                     }
                 })});

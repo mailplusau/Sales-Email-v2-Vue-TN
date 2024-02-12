@@ -6,6 +6,7 @@ const state = {
     salesRecordId: null,
     commRegId: null,
     commDate: null,
+    commTrialExpiry: null,
 
     iframeDialog: {
         open: false,
@@ -19,6 +20,7 @@ const getters = {
     salesRecordId : state => state.salesRecordId,
     commRegId : state => state.commRegId,
     commDate : state => state.commDate,
+    commTrialExpiry : state => state.commTrialExpiry,
 
     iframeDialog : state => state.iframeDialog,
 };
@@ -50,6 +52,7 @@ const actions = {
 
             context.state.commRegId = parseInt(data?.commRegId) || null
             context.state.commDate = data?.commDate || null
+            context.state.commTrialExpiry = data?.commTrialExpiry || null
         }
 
         if (context.state.commRegId) {

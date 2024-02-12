@@ -54,7 +54,6 @@ const state = {
 const getters = {
     salesFlags : state => state.salesFlags,
     formsToSend : (state, getters, rootState, rootGetters) => {
-        // TODO: filter
         let arr = [...state.formsToSend.defaultOptions];
         if (rootGetters['paramFlags'].oppWithValue || rootGetters['paramFlags'].closedWon) {
             if (rootGetters['customer/isInLpoProject'])
@@ -139,7 +138,6 @@ const actions = {
             noSale: context.rootGetters['paramFlags'].noSale
         });
 
-        // TODO: filter
         data = data.filter(item => {
             if (context.rootGetters['paramFlags'].oppWithValue)
                 return ![177, 178, 179, 180].includes(parseInt(item.internalid));
@@ -163,6 +161,19 @@ const actions = {
             let contactIndex = context.rootGetters['contacts/all'].data.findIndex(item => item.internalid === context.state.emailDetails.recipient);
             let contact = context.rootGetters['contacts/all'].data[contactIndex];
 
+            let trialEndDate = context.rootGetters['service-changes/commTrialExpiry'];
+            let formattedBillingStartDate = '';
+            if (context.rootGetters['paramFlags'].freeTrial && trialEndDate && trialEndDate?.split('/')?.length === 3) {
+                let billingStartDate = new Date(trialEndDate.split('/').reverse().join('-'));
+                billingStartDate.setDate(billingStartDate.getDate() + 1);
+
+                let yyyy = billingStartDate.getFullYear();
+                let mm = billingStartDate.getMonth() + 1; // Months start at 0!
+                let dd = billingStartDate.getDate();
+
+                formattedBillingStartDate = `${dd.padStart(2, '0')}/${mm.padStart(2, '0')}/${yyyy}`
+            }
+
             if (contact) {
                 let params = {
                     script: 395,
@@ -178,7 +189,9 @@ const actions = {
                     contactid: context.state.emailDetails.recipient,
                     userid: context.rootGetters['user/id'],
                     commdate: context.rootGetters['service-changes/commDate'],
-                    commreg: context.rootGetters['service-changes/commRegId']
+                    commreg: context.rootGetters['service-changes/commRegId'],
+                    trialenddate: trialEndDate,
+                    billingstartdate: formattedBillingStartDate,
                 }
 
                 let {emailSubject, emailBody} = await http.getEmailTemplateFromRenderer(baseURL + '/app/site/hosting/scriptlet.nl', params);
