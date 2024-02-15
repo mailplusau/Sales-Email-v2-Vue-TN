@@ -415,7 +415,7 @@ const getOperations = {
 }
 
 const postOperations = {
-    'sendSalesEmail' : function (response, {customerId, salesRecordId, base64StringArray, emailDetails, salesOutcome, localUTCOffset}) {
+    'sendSalesEmail' : function (response, {customerId, salesRecordId, commRegId, base64StringArray, emailDetails, salesOutcome, localUTCOffset}) {
         if (!processSalesOutcomes[salesOutcome]) // check if an outcome is supported
             return _writeResponseJson(response, {error: `Outcome [${salesOutcome}] not supported.`})
 
@@ -482,7 +482,7 @@ const postOperations = {
         }
 
         // process outcomes
-        processSalesOutcomes[salesOutcome]({emailDetails, phoneCallRecord, customerRecord, salesRecord, salesCampaignRecord, contactRecord, localUTCOffset});
+        processSalesOutcomes[salesOutcome]({commRegId, emailDetails, phoneCallRecord, customerRecord, salesRecord, salesCampaignRecord, contactRecord, localUTCOffset});
 
         // save the records.
         salesRecord?.save({ignoreMandatoryFields: true});
@@ -588,7 +588,7 @@ const postOperations = {
 };
 
 const processSalesOutcomes = {
-    [VARS.salesOptions.CLOSED_WON.value]({emailDetails, phoneCallRecord, customerRecord, salesRecord, salesCampaignRecord}) {
+    [VARS.salesOptions.CLOSED_WON.value]({commRegId, emailDetails, phoneCallRecord, customerRecord, salesRecord, salesCampaignRecord}) {
         let {search, format, url, https, runtime, email, record} = NS_MODULES;
         let customerId = customerRecord.getValue({fieldId: 'id'});
 
@@ -604,6 +604,8 @@ const processSalesOutcomes = {
         phoneCallRecord.setValue({fieldId: 'title', value: salesCampaignRecord.getValue({fieldId: 'name'}) + ' - SCF Sent'});
         phoneCallRecord.setValue({fieldId: 'message', value: emailDetails.lostNote});
         phoneCallRecord.setValue({fieldId: 'custevent_call_outcome', value: 24}); // Send Form (24)
+
+        if (commRegId) _setCommRegAsScheduled(commRegId);
 
         if (salesRecord) {
             salesRecord.setValue({fieldId: 'custrecord_sales_completed', value: false});
@@ -906,6 +908,48 @@ const processSalesOutcomes = {
         })
     }
 };
+
+const sharedFunctions = {
+    getServiceChanges(commRegId) {
+        let {search} = NS_MODULES;
+        let data = [];
+
+        if (!commRegId) return data; // if commRegId is null, most likely new customer with no services, we return empty array
+
+        let serviceChangeSearch = search.load({id: 'customsearch_smc_service_chg', type: 'customrecord_servicechg'});
+
+        serviceChangeSearch.filters.push(search.createFilter({
+            name: 'custrecord_servicechg_comm_reg',
+            operator: search.Operator.IS,
+            values: commRegId
+        }));
+
+        serviceChangeSearch.run().each(item => {
+            let tmp = {};
+
+            for (let column of item.columns) {
+                tmp[column.name] = item.getValue(column);
+                tmp[column.name + '_text'] = item.getText(column);
+            }
+
+            data.push(tmp);
+
+            return true;
+        })
+
+        return data;
+    },
+}
+
+function _setCommRegAsScheduled(commRegId) {
+    let {record} = NS_MODULES;
+    let serviceChanges = sharedFunctions.getServiceChanges(commRegId);
+
+    record['submitFields']({type: 'customrecord_commencement_register', id: commRegId, values: {'custrecord_trial_status': 9}});  // Scheduled (9)
+    serviceChanges.forEach(item => {
+        record['submitFields']({type: 'customrecord_servicechg', id: item.id, values: {'custrecord_servicechg_status': 1}});  // Scheduled (1)
+    });
+}
 
 function _getEmailAddressOfPartnersSalesRep(customerId) {
     let salesRepId = NS_MODULES.search['lookupFields']({

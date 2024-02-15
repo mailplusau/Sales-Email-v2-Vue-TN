@@ -262,6 +262,7 @@ const actions = {
             context.commit('displayBusyGlobalModal', {title: 'Processing', message: 'Saving your work. Please wait...'}, {root: true});
 
         await http.post('sendSalesEmail', {
+            commRegId: context.rootGetters['service-changes/commRegId'],
             customerId: context.rootGetters['customer/id'],
             salesRecordId: context.rootGetters['sales-records/selected'].internalid,
             base64StringArray,
