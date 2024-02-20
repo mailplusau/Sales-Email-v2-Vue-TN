@@ -167,9 +167,9 @@ const actions = {
                 let billingStartDate = new Date(trialEndDate.split('/').reverse().join('-'));
                 billingStartDate.setDate(billingStartDate.getDate() + 1);
 
-                let yyyy = billingStartDate.getFullYear();
-                let mm = billingStartDate.getMonth() + 1; // Months start at 0!
-                let dd = billingStartDate.getDate();
+                let yyyy = billingStartDate.getFullYear() + '';
+                let mm = (billingStartDate.getMonth() + 1) + ''; // Months start at 0!
+                let dd = (billingStartDate.getDate()) + '';
 
                 formattedBillingStartDate = `${dd.padStart(2, '0')}/${mm.padStart(2, '0')}/${yyyy}`
             }
