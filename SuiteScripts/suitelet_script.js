@@ -797,8 +797,21 @@ const processSalesOutcomes = {
         }
     },
     [VARS.salesOptions.FREE_TRIAL.value]({emailDetails, phoneCallRecord, customerRecord, salesRecord, salesCampaignRecord}) {
-        let {search, record, https, url, runtime, email} = NS_MODULES;
+        let {search, record, https, url, runtime, email, format} = NS_MODULES;
         let customerId = customerRecord.getValue({fieldId: 'id'});
+        let commReg;
+
+        search.create({
+            type: 'customrecord_commencement_register',
+            filters: [
+                {name: 'custrecord_commreg_sales_record', operator: 'is', values: salesRecord.getValue({fieldId: 'id'})},
+                {name: 'custrecord_trial_status', operator: 'anyof', values: [2, 9, 10]}, // Active (2) | Scheduled (9) | Quote (10)
+                {name: 'custrecord_customer', operator: 'anyof', values: customerId},
+            ],
+            columns: ['internalid']
+        }).run().each(item => { commReg = record.load({type: 'customrecord_commencement_register', id: item.getValue('internalid')}); });
+
+        if (!commReg) throw 'There is no commencement register for this customer.';
 
         if (parseInt(salesCampaignRecord?.getValue({fieldId: 'custrecord_salescampaign_recordtype'})) !== 1) {
             if (parseInt(customerRecord.getValue({fieldId: 'entitystatus'})) !== 13)
@@ -806,10 +819,11 @@ const processSalesOutcomes = {
 
             customerRecord.setValue({fieldId: 'custentity_date_prospect_opportunity', value: new Date()});
             customerRecord.setValue({fieldId: 'custentity_cust_closed_won', value: true});
+            customerRecord.setValue({fieldId: 'custentity_customer_trial_expiry_date', value: commReg.getValue({fieldId: 'custrecord_trial_expiry'})});
             customerRecord.setValue({fieldId: 'custentity_mpex_surcharge', value: 1});
             customerRecord.setValue({fieldId: 'custentity_mp_product_tracking', value: emailDetails.productTracking});
 
-            _sendReminderEmailToDataAdmins(customerRecord)
+            _sendReminderEmailToDataAdmins(customerRecord, commReg, true);
         }
 
         phoneCallRecord.setValue({fieldId: 'title', value: salesCampaignRecord.getValue({fieldId: 'name'}) + ' - Trial SCF Sent'});
@@ -823,44 +837,8 @@ const processSalesOutcomes = {
             salesRecord.setValue({fieldId: 'custrecord_sales_outcome', value: 14}); // Send Form (14)
         }
 
-        let commRegs = [];
-        let billingStartDate;
-        let formattedBillingStartDate;
-        search.create({
-            type: 'customrecord_commencement_register',
-            filters: [
-                {name: 'custrecord_commreg_sales_record', operator: 'is', values: salesRecord.getValue({fieldId: 'id'})},
-                {name: 'custrecord_trial_status', operator: 'anyof', values: [2, 9, 10]}, // Active (2) | Scheduled (9) | Quote (10)
-                {name: 'custrecord_customer', operator: 'anyof', values: customerId},
-            ],
-            columns: ['internalid', 'custrecord_date_entry', 'custrecord_sale_type', 'custrecord_franchisee', 'custrecord_in_out',
-                'custrecord_customer', 'custrecord_trial_status', 'custrecord_comm_date_signup', 'custrecord_trial_expiry', 'custrecord_comm_date']
-        }).run().each(item => {
-            let tmp = {};
-
-            for (let column of item.columns) {
-                tmp[column.name + '_text'] = item.getText(column);
-                tmp[column.name] = item.getValue(column);
-            }
-
-            commRegs.push(tmp);
-        });
-
-        if (commRegs.length === 1) {
-            let trial_end_date = commRegs[0]['custrecord_trial_expiry']
-            let trial_end_date_split = trial_end_date.split('/');
-            billingStartDate = new Date(trial_end_date_split[2] + "-" + trial_end_date_split[1] + "-" + trial_end_date_split[0]);
-            billingStartDate.setDate(billingStartDate.getDate() + 1)
-
-            let yyyy = billingStartDate.getFullYear();
-            let mm = billingStartDate.getMonth() + 1; // Months start at 0!
-            let dd = billingStartDate.getDate();
-
-            if (dd < 10) dd = '0' + dd;
-            if (mm < 10) mm = '0' + mm;
-
-            formattedBillingStartDate = dd + '/' + mm + '/' + yyyy;
-        }
+        let billingStartDate = new Date(commReg.getValue({fieldId: 'custrecord_trial_expiry'}).toISOString());
+        billingStartDate.setDate(billingStartDate.getDate() + 1);
 
         // TODO: ask why don't we use the contact that was selected
         search.create({
@@ -888,10 +866,10 @@ const processSalesOutcomes = {
                         dear: null,
                         contactid: resultSet.id,
                         userid: runtime['getCurrentUser']().id,
-                        commdate: commRegs[0]['custrecord_comm_date'],
-                        commreg: commRegs[0]['internalid'],
-                        trialenddate: commRegs[0]['custrecord_trial_expiry'],
-                        billingstartdate: formattedBillingStartDate,
+                        commdate: format.format({type: 'date', value: commReg.getValue({fieldId: 'custrecord_comm_date'})}),
+                        commreg: commReg.getValue({fieldId: 'internalid'}),
+                        trialenddate: format.format({type: 'date', value: commReg.getValue({fieldId: 'custrecord_trial_expiry'})}),
+                        billingstartdate: format.format({type: 'date', value: billingStartDate}),
                     }
                 })});
             let emailHtml = httpsGetResult.body;
@@ -975,7 +953,8 @@ function _getEmailAddressOfPartner(customerId) {
     })['partner.email'];
 }
 
-function _sendReminderEmailToDataAdmins(customerRecord) {
+function _sendReminderEmailToDataAdmins(customerRecord, commReg, isFreeTrial = false) {
+    let {format, email} = NS_MODULES;
     let customerEntityId = customerRecord.getValue({fieldId: 'entityid'});
     let customerName = customerRecord.getValue({fieldId: 'companyname'});
     let customerId = customerRecord.getValue({fieldId: 'id'});
@@ -985,9 +964,14 @@ function _sendReminderEmailToDataAdmins(customerRecord) {
     email_body2 += 'Customer Name: ' + customerEntityId + ' ' + customerName + '</br>';
     email_body2 += 'Franchisee: ' + customerRecord.getText({fieldId: 'partner'}) + '</br></br>';
 
-    NS_MODULES.email.send({
+    if (isFreeTrial) {
+        email_body2 += '<b><u>Trial Details:</u></b></br>Trial Start Date: ' + format.format({type: 'date', value: commReg.getValue({fieldId: 'custrecord_comm_date'})}) + '</br>';
+        email_body2 += 'Trial End Date: ' + format.format({type: 'date', value: commReg.getValue({fieldId: 'custrecord_trial_expiry'})}) + '</br></br>'
+    }
+
+    email.send({
         author: 112209,
-        subject: `${customerEntityId} ${customerName} - Signed Up - Please Check`,
+        subject: `${customerEntityId} ${customerName} - ${isFreeTrial ? 'Free Trial' : 'Signed Up'} - Please Check`,
         body: email_body2,
         recipients: ['fiona.harrison@mailplus.com.au', 'popie.popie@mailplus.com.au'],
         bcc: ['ankith.ravindran@mailplus.com.au'],
