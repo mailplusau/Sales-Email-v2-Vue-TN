@@ -319,6 +319,32 @@ const getOperations = {
 
         _writeResponseJson(response, {emailSubject, emailBody});
     },
+    'getAllEmailTemplates' : function (response) {
+        let {search} = NS_MODULES;
+        let data = [];
+
+        search.create({
+            type: "customrecord_camp_comm_template",
+            filters: [
+                ['isinactive', 'is', 'F'],
+            ],
+            columns: ['internalid', 'name', 'custrecord_camp_comm_camp_type', 'custrecord_camp_comm_comm_type',
+                'custrecord_camp_comm_subject', 'custrecord_camp_comm_email_template', 'custrecord_camp_comm_sms_template']
+        }).run().each(item => {
+            let tmp = {};
+
+            for (let column of item.columns) {
+                tmp[column.name] = item.getValue(column);
+                tmp[column.name + '_text'] = item.getText(column);
+            }
+
+            data.push(tmp);
+
+            return true;
+        });
+
+        _writeResponseJson(response, data);
+    },
     'getEmailTemplates' : function (response, {customerStatus, noSale}) {
         let {search} = NS_MODULES;
         let data = [];
@@ -415,6 +441,38 @@ const getOperations = {
 }
 
 const postOperations = {
+    'sendNormalEmail' : function (response, {customerId, salesRecordId, emailDetails}) {
+        let {record, runtime, email} = NS_MODULES;
+        let customerRecord = record.load({type: 'customer', id: customerId});
+        let customerStatus = parseInt(customerRecord.getValue({fieldId: 'entitystatus'}));
+        let salesRecord = salesRecordId ? record.load({type: 'customrecord_sales', id: salesRecordId}) : null;
+        let idOfLastAssignSalesRep = runtime['getCurrentUser']().id;
+
+        // send email
+        if (parseInt(emailDetails.recipient) > 0) {
+            idOfLastAssignSalesRep = salesRecord.getValue({fieldId: 'custrecord_sales_assigned'});
+            let contactRecord = record.load({type: 'contact', id: emailDetails.recipient});
+            let userRole = runtime['getCurrentUser']().role;
+            let {salesRepId} = _getEmailAddressOfPartnersSalesRep(customerId);
+
+            email.send({
+                // Set the author of NetSuite if email is coming from Data Admin or Admin. Otherwise, use sales rep of
+                // franchisee as author if customer is Signed (13) or sales rep that was last assigned to sales record if not Signed
+                author: userRole === 3 || userRole === 1032 ? 112209 : (customerStatus === 13 ? salesRepId : idOfLastAssignSalesRep),
+                subject: `${emailDetails.emailSubject}`,
+                body: emailDetails.emailBody,
+                recipients: [contactRecord.getValue({fieldId: 'email'})],
+                cc: [...emailDetails.cc],
+                // bcc: [userRole === 3 || userRole === 1032 ? runtime['getCurrentUser']().email : salesRepEmail],
+                relatedRecords: {
+                    'entityId': customerId
+                },
+                isInternalOnly: true
+            });
+        }
+
+        _writeResponseJson(response, 'suitelet sendNormalEmail');
+    },
     'sendSalesEmail' : function (response, {customerId, salesRecordId, commRegId, base64StringArray, emailDetails, salesOutcome, localUTCOffset}) {
         if (!processSalesOutcomes[salesOutcome]) // check if an outcome is supported
             return _writeResponseJson(response, {error: `Outcome [${salesOutcome}] not supported.`})

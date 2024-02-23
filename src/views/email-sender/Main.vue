@@ -46,6 +46,7 @@
                             <EmailAndCallbackTab v-else-if="tabItem.name === emailSenderTabNames.EMAIL_CALLBACK" />
                             <NoSaleTab v-else-if="tabItem.name === emailSenderTabNames.NO_SALE" />
                             <SaveAndSendTab v-else-if="tabItem.name === emailSenderTabNames.SAVE_SEND" />
+                            <EmailTerminal v-else-if="tabItem.name === emailSenderTabNames.EMAIL_TERMINAL" />
                         </v-stepper-content>
                     </v-stepper-items>
                 </v-stepper>
@@ -62,10 +63,12 @@ import EmailAndCallbackTab from '@/views/email-sender/tab/EmailAndCallback.vue';
 import SaveAndSendTab from '@/views/email-sender/tab/SaveAndSend.vue';
 import SetAppointmentTab from '@/views/email-sender/tab/SetAppointment.vue';
 import NoSaleTab from '@/views/email-sender/tab/NoSale.vue';
+import EmailTerminal from '@/views/email-sender/tab/EmailTerminal.vue';
 
 export default {
     name: "Main",
     components: {
+        EmailTerminal,
         SetAppointmentTab,
         SaveAndSendTab, EmailAndCallbackTab, FormAndBrochureTab, ServiceAndPriceTab, NoSaleTab},
     data: () => ({

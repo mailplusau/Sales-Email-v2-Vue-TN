@@ -88,6 +88,8 @@ const mutations = {
             tabs.push({name: VARS.emailSenderTabNames.SET_APPOINTMENT, label: ''});
         } else if (selected.includes(VARS.salesOptions.NO_SALE.value)) {
             tabs.push({name: VARS.emailSenderTabNames.NO_SALE, label: ''});
+        } else if (selected.includes(VARS.salesOptions.SEND_EMAIL.value)) {
+            tabs.push({name: VARS.emailSenderTabNames.EMAIL_TERMINAL, label: ''});
         } else {
             if (selected.includes(CLOSED_WON.value) || selected.includes(OPP_WITH_VALUE.value) || selected.includes(FREE_TRIAL.value))
                 tabs.push({name: VARS.emailSenderTabNames.SERVICE_PRICE, label: 'Service & Price'});
@@ -133,10 +135,12 @@ const actions = {
     getEmailTemplates : async context => {
         context.state.emailTemplates.busy = true;
 
-        let data = await http.get('getEmailTemplates', {
-            customerStatus: context.rootGetters['customer/status'],
-            noSale: context.rootGetters['paramFlags'].noSale
-        });
+        // Get all email templates without filter if sendEmail flag is present
+        let data = context.rootGetters['paramFlags'].sendEmail ? await http.get('getAllEmailTemplates') :
+            await http.get('getEmailTemplates', {
+                customerStatus: context.rootGetters['customer/status'],
+                noSale: context.rootGetters['paramFlags'].noSale
+            });
 
         data = data.filter(item => {
             if (context.rootGetters['paramFlags'].oppWithValue)
@@ -269,6 +273,23 @@ const actions = {
             emailDetails: context.state.emailDetails,
             salesOutcome: context.state.salesFlags.selected[0],
             localUTCOffset: new Date().getTimezoneOffset(),
+        });
+
+        context.commit('displayBusyGlobalModal', {title: 'Redirecting', message: 'Processing complete. Redirecting to customer record page...'}, {root: true});
+
+        context.dispatch('customer/goToRecordPage', null, {root: true}).then();
+    },
+    sendNormalEmail : async context => {
+        if (!context.rootGetters['customer/id'])
+            return context.commit('displayErrorGlobalModal', {title: 'Error', message: 'Customer ID is missing'}, {root: true});
+
+        context.commit('displayBusyGlobalModal',
+            {title: 'Processing', message: 'Sending email. This might take up to 30 seconds with attachments. Please wait...'}, {root: true});
+
+        await http.post('sendNormalEmail', {
+            customerId: context.rootGetters['customer/id'],
+            salesRecordId: context.rootGetters['sales-records/selected'].internalid,
+            emailDetails: context.state.emailDetails,
         });
 
         context.commit('displayBusyGlobalModal', {title: 'Redirecting', message: 'Processing complete. Redirecting to customer record page...'}, {root: true});

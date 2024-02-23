@@ -16,6 +16,8 @@ const emailSenderTabNames = {
     EMAIL_CALLBACK: 'email_callback',
 
     SAVE_SEND: 'save_send',
+
+    EMAIL_TERMINAL: 'email_terminal',
 }
 
 const operationModes = {
@@ -25,6 +27,10 @@ const operationModes = {
 }
 
 const salesOptions = {
+    SEND_EMAIL: {
+        value: 'send_email',
+        text: 'Send Email'
+    },
     FREE_TRIAL: {
         value: 'free_trial',
         text: 'Free trial'

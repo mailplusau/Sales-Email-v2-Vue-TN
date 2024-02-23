@@ -27,6 +27,7 @@ const state = {
         inviteToPortal: false,
 
         noSale: false,
+        sendEmail: false,
     }
 
 };
@@ -140,6 +141,7 @@ function _readUrlParams(context) {
     context.state.paramFlags.inviteToPortal = _checkIfParamIsTrue('invitetoportal', params, customParams);
     context.state.paramFlags.saveCustomer = _checkIfParamIsTrue('savecustomer', params, customParams);
     context.state.paramFlags.noSale = _checkIfParamIsTrue('nosale', params, customParams);
+    context.state.paramFlags.sendEmail = _checkIfParamIsTrue('sendEmail', params, customParams);
 
 
     if (context.state.paramFlags.callback) {
@@ -167,6 +169,10 @@ function _readUrlParams(context) {
     } else if (context.state.paramFlags.inviteToPortal) {
         context.state['email-sender'].salesFlags.options = [VARS.salesOptions.INV_TO_PORTAL];
         context.state['email-sender'].salesFlags.selected = [VARS.salesOptions.INV_TO_PORTAL.value];
+        context.state['email-sender'].salesFlags.disabled = true;
+    } else if (context.state.paramFlags.sendEmail) {
+        context.state['email-sender'].salesFlags.options = [VARS.salesOptions.SEND_EMAIL];
+        context.state['email-sender'].salesFlags.selected = [VARS.salesOptions.SEND_EMAIL.value];
         context.state['email-sender'].salesFlags.disabled = true;
     } else {
         context.state['email-sender'].salesFlags.options = [
