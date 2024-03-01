@@ -1062,7 +1062,7 @@ function _informFranchiseeOfLostLeadThatTheyEntered(customerRecord, lostReason, 
     })['partner.custentity_sales_rep_assigned'][0].value;
 
     let emailBody = '';
-    emailBody += 'A lead that you entered has been marked as Lost';
+    emailBody += 'A lead that you entered has been marked as Lost. ' + '<br><br>';
     emailBody += 'Customer Name: ' + '<a href="' + customerLink + '" target="_blank">' + customerName + '</a>' + '<br>';
     emailBody += 'Lost Reason: ' + lostReason + '<br>'
     emailBody += 'Note from Sales Rep: ' + lostNote +'<br>';
@@ -1072,7 +1072,6 @@ function _informFranchiseeOfLostLeadThatTheyEntered(customerRecord, lostReason, 
         subject: 'Lost Lead',
         body: emailBody,
         recipients: [partnerRecord.getValue({fieldId: 'email'})], // Associated franchisee
-        bcc: ['tim.nguyen@mailplus.com.au'], // TODO: remove this after confirming that it works
         relatedRecords: {
             'entityId': customerId
         },
