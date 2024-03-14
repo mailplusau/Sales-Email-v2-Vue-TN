@@ -29,7 +29,7 @@ const operationModes = {
 const salesOptions = {
     SEND_EMAIL: {
         value: 'send_email',
-        text: 'Send Email'
+        text: 'Email Terminal'
     },
     FREE_TRIAL: {
         value: 'free_trial',

@@ -2,7 +2,7 @@
     <v-card :flat="!displayOnly" :elevation="displayOnly ? 5 : 0" class="container background">
         <v-form ref="form" v-model="formValid" lazy-validation @submit.prevent="save">
             <v-row>
-                <v-col xl="9" lg="8" md="7" sm="6" cols="12">
+                <v-col lg="8" md="7" sm="6" cols="12">
                     <v-col cols="12">
                         <v-autocomplete prefix="Assigned to:"
                                         :items="$store.getters['misc/salesReps']"
@@ -24,7 +24,7 @@
                         </v-textarea>
                     </v-col>
                 </v-col>
-                <v-col xl="3" lg="4" md="5" sm="6" cols="12">
+                <v-col lg="4" md="5" sm="6" cols="12">
                     <v-col cols="12">
                         <EditableDateInput v-model="appointmentDetails.date" prefix="Appointment Date:" :min="'2023-11-02'" />
                     </v-col>
@@ -42,7 +42,6 @@
                         <v-icon class="mr-2">mdi-content-save-check-outline</v-icon> Save appointment
                     </v-btn>
                 </v-col>
-                <v-col cols="12">{{appointmentDetails}}</v-col>
             </v-row>
         </v-form>
 

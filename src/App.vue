@@ -7,38 +7,30 @@
                         <h1 class="primary--text">
                             {{ pageTitle }}
                         </h1>
+                        <a class="ma-0 caption primary--text font-weight-bold" target="_blank"
+                           :href="baseUrl + '/app/common/entity/custjob.nl?id=' + $store.getters['customer/id']">
+                            <v-icon small class="primary--text mr-1">mdi-account</v-icon> {{customer.entityid}} {{customer.companyname}}
+                        </a>
                     </v-col>
 
                     <v-col cols="auto">
-                        <a @click="$store.dispatch('addShortcut')" class="subtitle-1">Add To Shortcuts <v-icon size="20" color="primary">mdi-open-in-new</v-icon></a>
+                        <a @click="$store.dispatch('addShortcut')" class="subtitle-1">
+                            Add To Shortcuts <v-icon size="20" color="primary">mdi-open-in-new</v-icon></a>
                     </v-col>
                 </v-row>
             </v-container>
 
-            <v-tabs v-model="mainTab" color="primary" background-color="background">
-                <v-tab :href="`#${mainTabNames.HOME}`">
+            <v-tabs color="primary" background-color="background">
+                <v-tab @click="goBackToCallCenter">
                     <v-icon left>mdi-home</v-icon>
-                    Home
-                </v-tab>
-
-                <v-spacer></v-spacer>
-
-                <v-tab :href="`#${mainTabNames.HELP}`">
-                    <v-icon left>mdi-help-circle-outline</v-icon>
-                    Help
+                    Call Center
                 </v-tab>
             </v-tabs>
 
             <v-divider></v-divider>
 
-            <v-tabs-items v-model="mainTab" class="background">
-                <v-tab-item :value="mainTabNames.HOME">
-                    <EmailSender />
-                </v-tab-item>
-                <v-tab-item :value="mainTabNames.HELP">
-                    <HelpPage />
-                </v-tab-item>
-            </v-tabs-items>
+            <EmailSender />
+
         </v-main>
 
         <GlobalNotificationModal />
@@ -46,7 +38,7 @@
 </template>
 
 <script>
-import {VARS} from '@/utils/utils.mjs';
+import {baseURL, VARS} from '@/utils/utils.mjs';
 import GlobalNotificationModal from "@/components/GlobalNotificationModal";
 import EmailSender from '@/views/email-sender/Main';
 import HelpPage from '@/views/help/Main';
@@ -64,6 +56,11 @@ export default {
     beforeCreate() {
         this.$store.dispatch('init');
     },
+    methods: {
+        goBackToCallCenter() {
+            top.history.back();
+        }
+    },
     computed:{
         theme() {
             return (this.$vuetify.theme.dark) ? 'dark' : 'light'
@@ -76,6 +73,12 @@ export default {
                 this.$store.commit('setMainTab', val);
             }
         },
+        customer() {
+            return this.$store.getters['customer/details'];
+        },
+        baseUrl() {
+            return baseURL
+        }
     }
 };
 </script>
