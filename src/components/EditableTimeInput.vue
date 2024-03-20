@@ -4,10 +4,12 @@
 
         <template v-slot:activator="{ on, attrs }">
             <v-text-field ref="timeInput" v-model="enteredTime" :prefix="prefix" :label="label" :hint="hint" dense
-                          persistent-hint prepend-icon="mdi-clock-time-four-outline" v-bind="attrs" v-on="on"
-                          :rules="[validateEnteredTime]"
+                          persistent-hint v-bind="attrs" v-on="on"
+                          :rules="[validateEnteredTime, ...rules]"
                           @blur="handleEnteredTimeChanged"
                           @keyup.enter="handleEnteredTimeChanged"
+                          :prepend-icon="prependIcon"
+                          :disabled="disabled"
             ></v-text-field>
         </template>
 
@@ -24,6 +26,11 @@ export default {
     name: "EditableTimeInput",
     props: {
         prefix: {
+            type: String,
+            default: '',
+            required: false,
+        },
+        prependIcon: {
             type: String,
             default: '',
             required: false,
@@ -53,18 +60,31 @@ export default {
             default: '',
             required: true,
         },
+        disabled: {
+            type: Boolean,
+            default: false,
+            required: false,
+        },
+        rules: {
+            type: Array,
+            default: () => ([]),
+            required: false,
+        }
     },
     data: () => ({
         timeMenu: false,
         enteredTime: '09:00',
     }),
+    mounted() {
+        this.enteredTime = this.value;
+    },
     methods: {
         validateEnteredTime() {
             let [strHour, strMinute] = this.enteredTime.split(':');
             let hour = parseInt(strHour);
             let minute = parseInt(strMinute);
 
-            return (!isNaN(hour) && !isNaN(minute) && hour >= 0 && minute >= 0 && hour <= 23 && minute <= 59) ||
+            return (/^\d{2}:\d{2}$/.test(this.enteredTime) && hour >= 0 && minute >= 0 && hour <= 23 && minute <= 59) ||
                 'Invalid time format. Must be HH:MM (24 hours).';
         },
         parseEnteredTime() {

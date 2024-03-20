@@ -131,7 +131,7 @@ function _readUrlParams(context) {
     context.state['customer'].id = parseInt(params['custid'] || customParams['custid'] || null);
     context.state['sales-records'].selected.internalid = parseInt(params['sales_record_id'] || customParams['sales_record_id'] || null);
 
-    // TODO: Priority system
+    // Priority system
     // callback > closedwon > oppwithvalue
 
     context.state.paramFlags.callback = _checkIfParamIsTrue('callback', params, customParams);

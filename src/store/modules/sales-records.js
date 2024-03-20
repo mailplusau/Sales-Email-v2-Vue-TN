@@ -22,6 +22,8 @@ const actions = {
 };
 
 async function _getDetailsOfSelectedSalesRecord(context) {
+    if (!context.state.selected.internalid) return;
+
     let fieldIds = [];
     for (let fieldId in context.state.selected) fieldIds.push(fieldId);
 

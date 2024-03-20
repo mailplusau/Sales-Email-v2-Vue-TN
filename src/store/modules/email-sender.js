@@ -303,9 +303,9 @@ const actions = {
         context.commit('displayBusyGlobalModal', {title: 'Processing', message: 'Setting up appointment. Please wait...'}, {root: true});
 
         let appointmentDetails = {...context.state.appointmentDetails};
-        appointmentDetails['date'] = new Date(context.state.appointmentDetails.date);
-        appointmentDetails['startTime'] = new Date(context.state.appointmentDetails.date + 'T' + context.state.appointmentDetails.startTime);
-        appointmentDetails['endTime'] = new Date(context.state.appointmentDetails.date + 'T' + context.state.appointmentDetails.endTime);
+        appointmentDetails['date'] = context.state.appointmentDetails.date + 'T00:00';
+        appointmentDetails['startTime'] = context.state.appointmentDetails.date + 'T' + context.state.appointmentDetails.startTime;
+        appointmentDetails['endTime'] = context.state.appointmentDetails.date + 'T' + context.state.appointmentDetails.endTime;
 
         await http.post('setAppointment', {
             customerId: context.rootGetters['customer/id'],

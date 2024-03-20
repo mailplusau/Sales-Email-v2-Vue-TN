@@ -29,10 +29,12 @@
                         <EditableDateInput v-model="appointmentDetails.date" prefix="Appointment Date:" :min="'2023-11-02'" />
                     </v-col>
                     <v-col cols="12">
-                        <EditableTimeInput v-model="appointmentDetails.startTime" prefix="Start Time:" :max="appointmentDetails.endTime" />
+                        <EditableTimeInput v-model="appointmentDetails.startTime" prefix="Start Time:" :max="appointmentDetails.endTime"
+                                           :rules="[v => appointmentDetails.endTime !== appointmentDetails.startTime || 'Start time must be earlier than End time.']" />
                     </v-col>
                     <v-col cols="12">
-                        <EditableTimeInput v-model="appointmentDetails.endTime" prefix="End Time:" :min="appointmentDetails.startTime" />
+                        <EditableTimeInput v-model="appointmentDetails.endTime" prefix="End Time:" :min="appointmentDetails.startTime"
+                                           :rules="[v => appointmentDetails.endTime !== appointmentDetails.startTime || 'Start time must be earlier than End time.']" />
                     </v-col>
                 </v-col>
 
