@@ -550,14 +550,13 @@ const postOperations = {
         _writeResponseJson(response, 'suitelet sendSalesEmail');
     },
     'setAppointment' : function (response, {customerId, salesRecordId, appointmentDetails}) {
-        if (!salesRecordId) return _writeResponseJson(response, {error: `Sales Record ID not provided.`});
-
         let {record, runtime, email} = NS_MODULES;
         let salesRepId = parseInt(appointmentDetails.salesRepId)
         let customerRecord = record.load({type: 'customer', id: customerId});
-        let salesRecord = record.load({type: 'customrecord_sales', id: salesRecordId});
-        let salesCampaignId = salesRecord.getValue({fieldId: 'custrecord_sales_campaign'});
-        let salesCampaignRecord = record.load({type: 'customrecord_salescampaign', id: salesCampaignId});
+        let salesRecord = salesRecordId ? record.load({type: 'customrecord_sales', id: salesRecordId}) : null;
+        let salesCampaignId = salesRecord ? salesRecord.getValue({fieldId: 'custrecord_sales_campaign'}) : null;
+        let salesCampaignRecord = salesCampaignId ? record.load({type: 'customrecord_salescampaign', id: salesCampaignId}) : null;
+        let salesCampaignName = salesCampaignRecord ? salesCampaignRecord.getValue({fieldId: 'name'}) : '';
         let employeeRecord = record.load({type: 'employee', id: salesRepId});
 
         // Create phone call record
@@ -571,7 +570,7 @@ const postOperations = {
         phoneCallRecord.setValue({fieldId: 'timedevent', value: true});
         phoneCallRecord.setValue({fieldId: 'status', value: 'SCHEDULED'}); // If outcome is set_appointment, set this as SCHEDULED
         phoneCallRecord.setValue({fieldId: 'custevent_call_type', value: 8}); // Set Appointment (8)
-        phoneCallRecord.setValue({fieldId: 'title', value: salesCampaignRecord.getValue({fieldId: 'name'}) + ' - Appointment'});
+        phoneCallRecord.setValue({fieldId: 'title', value: salesCampaignName ? salesCampaignName + ' - Appointment' : 'Appointment'});
         phoneCallRecord.setValue({fieldId: 'message', value: appointmentDetails.notes});
         phoneCallRecord.setValue({fieldId: 'custevent_call_outcome', value: 17}); // Send Info (17)
 
@@ -586,58 +585,62 @@ const postOperations = {
         calendarEventRecord.setValue({fieldId: 'remindertype', value: 'EMAIL'});
         calendarEventRecord.setValue({fieldId: 'reminderminutes', value: '60'});
         calendarEventRecord.setValue({fieldId: 'status', value: 'CONFIRMED'});
-        calendarEventRecord.setValue({fieldId: 'title', value: 'Sales - ' + salesCampaignRecord.getValue({fieldId: 'name'}) + ' - Appointment'});
+        calendarEventRecord.setValue({fieldId: 'title', value: salesCampaignName ? 'Sales - ' + salesCampaignName + ' - Appointment' : 'Appointment'});
         calendarEventRecord.setValue({fieldId: 'message', value: appointmentDetails.notes});
 
         // Modify sales record
-        salesRecord.setValue({fieldId: 'custrecord_sales_completed', value: false});
-        salesRecord.setValue({fieldId: 'custrecord_sales_inuse', value: false});
-        salesRecord.setValue({fieldId: 'custrecord_sales_outcome', value: 5}); // Call back (5)
-
-        if (salesRepId === runtime['getCurrentUser']().id) { // if the sales rep assign to themselves
-            salesRecord.setValue({fieldId: 'custrecord_sales_callbackdate', value: new Date(appointmentDetails.date)});
-            salesRecord.setValue({fieldId: 'custrecord_sales_callbacktime', value: new Date(appointmentDetails.startTime)});
-            salesRecord.setValue({fieldId: 'custrecord_sales_appt', value: true});
-        } else { // else, we create a new sales record and inform the newly assigned sales rep
-            salesRecord.setValue({fieldId: 'custrecord_sales_deactivated', value: true});
-            salesRecord.setValue({fieldId: 'custrecord_sales_completed', value: true});
-
-            salesRecord.save({ignoreMandatoryFields: true});
-
-            // we create a new sales record here
-            salesRecord = record.create({type: 'customrecord_sales'});
-            salesRecord.setValue({fieldId: 'custrecord_sales_customer', value: customerId});
-            salesRecord.setValue({fieldId: 'custrecord_sales_campaign', value: salesCampaignId});
-            salesRecord.setValue({fieldId: 'custrecord_sales_assigned', value: salesRepId});
+        if (salesRecord) {
+            salesRecord.setValue({fieldId: 'custrecord_sales_completed', value: false});
+            salesRecord.setValue({fieldId: 'custrecord_sales_inuse', value: false});
             salesRecord.setValue({fieldId: 'custrecord_sales_outcome', value: 5}); // Call back (5)
-            salesRecord.setValue({fieldId: 'custrecord_sales_callbackdate', value: new Date(appointmentDetails.date)});
-            salesRecord.setValue({fieldId: 'custrecord_sales_callbacktime', value: new Date(appointmentDetails.startTime)});
-            salesRecord.setValue({fieldId: 'custrecord_sales_appt', value: true});
 
-            // send email to sales rep
-            let customerLink = 'https://1048144.app.netsuite.com/app/common/entity/custjob.nl?id=' + customerId;
-            let body = 'New sales record has been created. \n' +
-                ' You have been assigned a lead. Please respond in an hour. \n' +
-                ' Link: ' + customerLink;
+            if (salesRepId === runtime['getCurrentUser']().id) { // if the sales rep assign to themselves
+                salesRecord.setValue({fieldId: 'custrecord_sales_callbackdate', value: new Date(appointmentDetails.date)});
+                salesRecord.setValue({fieldId: 'custrecord_sales_callbacktime', value: new Date(appointmentDetails.startTime)});
+                salesRecord.setValue({fieldId: 'custrecord_sales_appt', value: true});
+            } else { // else, we create a new sales record and inform the newly assigned sales rep
+                salesRecord.setValue({fieldId: 'custrecord_sales_deactivated', value: true});
+                salesRecord.setValue({fieldId: 'custrecord_sales_completed', value: true});
 
-            email.send({
-                author: 112209,
-                subject: 'Sales Lead',
-                body,
-                recipients: [employeeRecord.getValue({fieldId: 'email'})],
-                isInternalOnly: true
-            });
+                salesRecord.save({ignoreMandatoryFields: true});
+
+                // we create a new sales record here
+                salesRecord = record.create({type: 'customrecord_sales'});
+                salesRecord.setValue({fieldId: 'custrecord_sales_customer', value: customerId});
+                salesRecord.setValue({fieldId: 'custrecord_sales_campaign', value: salesCampaignId});
+                salesRecord.setValue({fieldId: 'custrecord_sales_assigned', value: salesRepId});
+                salesRecord.setValue({fieldId: 'custrecord_sales_outcome', value: 5}); // Call back (5)
+                salesRecord.setValue({fieldId: 'custrecord_sales_callbackdate', value: new Date(appointmentDetails.date)});
+                salesRecord.setValue({fieldId: 'custrecord_sales_callbacktime', value: new Date(appointmentDetails.startTime)});
+                salesRecord.setValue({fieldId: 'custrecord_sales_appt', value: true});
+
+                // send email to sales rep
+                let customerLink = 'https://1048144.app.netsuite.com/app/common/entity/custjob.nl?id=' + customerId;
+                let body = 'New sales record has been created. \n' +
+                    ' You have been assigned a lead. Please respond in an hour. \n' +
+                    ' Link: ' + customerLink;
+
+                email.send({
+                    author: 112209,
+                    subject: 'Sales Lead',
+                    body,
+                    recipients: [employeeRecord.getValue({fieldId: 'email'})],
+                    isInternalOnly: true
+                });
+            }
+
+            // Modify customer record
+            if (parseInt(salesCampaignRecord?.getValue({fieldId: 'custrecord_salescampaign_recordtype'})) !== 1) {
+                if (parseInt(customerRecord.getValue({fieldId: 'entitystatus'})) !== 13)
+                    customerRecord.setValue({fieldId: 'entitystatus', value: 8}); // SUSPECT-Out of Territory (64)
+
+                customerRecord.setValue({fieldId: 'custentity_date_prospect_in_contact', value: new Date()});
+            }
+
+            salesRecord?.save({ignoreMandatoryFields: true});
         }
 
-        // Modify customer record
-        if (parseInt(salesCampaignRecord?.getValue({fieldId: 'custrecord_salescampaign_recordtype'})) !== 1) {
-            if (parseInt(customerRecord.getValue({fieldId: 'entitystatus'})) !== 13)
-                customerRecord.setValue({fieldId: 'entitystatus', value: 8}); // SUSPECT-Out of Territory (64)
 
-            customerRecord.setValue({fieldId: 'custentity_date_prospect_in_contact', value: new Date()});
-        }
-
-        salesRecord.save({ignoreMandatoryFields: true});
         phoneCallRecord.save({ignoreMandatoryFields: true});
         calendarEventRecord.save({ignoreMandatoryFields: true});
 
@@ -898,7 +901,6 @@ const processSalesOutcomes = {
         let billingStartDate = new Date(commReg.getValue({fieldId: 'custrecord_trial_expiry'}).toISOString());
         billingStartDate.setDate(billingStartDate.getDate() + 1);
 
-        // TODO: ask why don't we use the contact that was selected
         search.create({
             type: "contact",
             filters:
