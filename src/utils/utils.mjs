@@ -67,11 +67,21 @@ const salesOptions = {
     },
 }
 
+const salesForms = { // SCF Folder ID: 1212243 | Standing Order Form Folder ID: 3766464
+    SOF: {value: 94, text: 'Standing Order Form', filename: 'standing_order', folderId: 3766464},
+    COE: {value: 186, text: 'Change of Entity Form', filename: 'coe'},
+    SCF: {value: 159, text: 'Service Commencement Form', filename: 'scf', folderId: 1212243},
+    LPO_SCF: {value: 411, text: 'LPO - Service Commencement Form', filename: 'lpo_scf', folderId: 1212243},
+    FT_SCF: {value: 409, text: 'Free Trial - Service Commencement Form', filename: 'trial_scf', folderId: 1212243},
+    LPO_FT_SCF: {value: 412, text: 'LPO Free Trial - Service Commencement Form', filename: 'lpo_trial_scf', folderId: 1212243},
+}
+
 export const VARS = {
     mainTabNames,
     operationModes,
     emailSenderTabNames,
     salesOptions,
+    salesForms,
 
     pageTitle: 'Sales Email Sender'
 }

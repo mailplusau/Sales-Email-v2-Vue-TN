@@ -473,7 +473,7 @@ const postOperations = {
 
         _writeResponseJson(response, 'suitelet sendNormalEmail');
     },
-    'sendSalesEmail' : function (response, {customerId, salesRecordId, commRegId, base64StringArray, emailDetails, salesOutcome, localUTCOffset}) {
+    'sendSalesEmail' : function (response, {customerId, salesRecordId, commRegId, attachedFormsArray, emailDetails, salesOutcome, localUTCOffset}) {
         if (!processSalesOutcomes[salesOutcome]) // check if an outcome is supported
             return _writeResponseJson(response, {error: `Outcome [${salesOutcome}] not supported.`})
 
@@ -513,14 +513,27 @@ const postOperations = {
             let {salesRepId, salesRepEmail} = _getEmailAddressOfPartnersSalesRep(customerId);
             let customerEntityId = customerRecord.getValue({fieldId: 'entityid'});
             let customerName = customerRecord.getValue({fieldId: 'companyname'});
+            let attachments = []
 
-            let attachments = base64StringArray.map(({filename, base64Str}) => {
-                return file.create({
-                    name: filename,
+            for (let formInfo of attachedFormsArray) {
+                let formFile = file.create({
+                    name: formInfo.filename,
                     fileType: file.Type['PDF'],
-                    contents: base64Str,
+                    contents: formInfo.base64Str,
                 });
-            });
+
+                attachments.push(formFile)
+
+                if ([1212243, 3766464].includes(parseInt(formInfo.folderId))) {  // SCF Folder ID: 1212243 | Standing Order Form Folder ID: 3766464
+                    formFile.folder = formInfo.folderId;
+                    let fileId = formFile.save();
+
+                    if (parseInt(formInfo.folderId) === 1212243)
+                        record['submitFields']({type: 'customrecord_commencement_register', id: commRegId, values: {'custrecord_scand_form': fileId}});
+                    else if (parseInt(formInfo.folderId) === 3766464)
+                        record['submitFields']({type: 'customrecord_commencement_register', id: commRegId, values: {'custrecord_standing_order_form': fileId}});
+                }
+            }
 
             email.send({
                 // Set the author of NetSuite if email is coming from Data Admin or Admin. Otherwise, use sales rep of

@@ -10,10 +10,7 @@ const state = {
 
     formsToSend: {
         options: [],
-        defaultOptions: [
-            {value: 94, text: 'Standing Order Form', filename: 'standing_order'},
-            {value: 186, text: 'Change of Entity Form', filename: 'coe'}
-        ],
+        defaultOptions: [ VARS.salesForms.SOF, VARS.salesForms.COE ],
         selected: [],
     },
 
@@ -55,15 +52,10 @@ const getters = {
     salesFlags : state => state.salesFlags,
     formsToSend : (state, getters, rootState, rootGetters) => {
         let arr = [...state.formsToSend.defaultOptions];
-        if (rootGetters['paramFlags'].oppWithValue || rootGetters['paramFlags'].closedWon) {
-            if (rootGetters['customer/isInLpoProject'])
-                arr.unshift({value: 411, text: 'LPO - Service Commencement Form', filename: 'lpo_scf'});
-            else arr.unshift({value: 159, text: 'Service Commencement Form', filename: 'scf'});
-        } else if (rootGetters['paramFlags'].freeTrial) {
-            if (rootGetters['customer/isInLpoProject'])
-                arr.unshift({value: 412, text: 'LPO Free Trial - Service Commencement Form', filename: 'lpo_trial_scf'});
-            else arr.unshift({value: 409, text: 'Free Trial - Service Commencement Form', filename: 'trial_scf'});
-        }
+        if (rootGetters['paramFlags'].oppWithValue || rootGetters['paramFlags'].closedWon)
+            arr.unshift(rootGetters['customer/isInLpoProject'] ? VARS.salesForms.LPO_SCF : VARS.salesForms.SCF)
+        else if (rootGetters['paramFlags'].freeTrial)
+            arr.unshift(rootGetters['customer/isInLpoProject'] ? VARS.salesForms.LPO_FT_SCF : VARS.salesForms.FT_SCF)
 
         state.formsToSend.options = [...arr];
 
@@ -233,13 +225,14 @@ const actions = {
 
         context.commit('displayBusyGlobalModal', {title: 'Processing', message: 'Preparing attachment. Please wait...'}, {root: true});
 
-        let base64StringArray = [];
+        let attachedFormsArray = [];
         let formattedDate = getFormattedDate();
 
         if (parseInt(context.state.emailDetails.recipient) > 0) {
             for (let id of context.state.formsToSend.selected) {
                 let formIndex = context.state.formsToSend.options.findIndex(item => item.value === id);
-                let formInfo = formIndex >= 0 ? context.state.formsToSend.options[formIndex] : {};
+                if (formIndex < 0) continue;
+                let formInfo = context.state.formsToSend.options[formIndex];
 
                 let params = {
                     script: 746,
@@ -255,9 +248,11 @@ const actions = {
 
                 let base64Str = await http.getBase64PDF(baseURL + '/app/site/hosting/scriptlet.nl', params);
 
-                base64StringArray.push({
+                attachedFormsArray.push({
                     filename: `${formInfo.filename}_${context.rootGetters['customer/id']}_${formattedDate}.pdf`,
-                    base64Str
+                    base64Str,
+                    formId: formInfo.value,
+                    folderId: formInfo.folderId || null,
                 });
             }
 
@@ -269,7 +264,7 @@ const actions = {
             commRegId: context.rootGetters['service-changes/commRegId'],
             customerId: context.rootGetters['customer/id'],
             salesRecordId: context.rootGetters['sales-records/selected'].internalid,
-            base64StringArray,
+            attachedFormsArray,
             emailDetails: context.state.emailDetails,
             salesOutcome: context.state.salesFlags.selected[0],
             localUTCOffset: new Date().getTimezoneOffset(),
