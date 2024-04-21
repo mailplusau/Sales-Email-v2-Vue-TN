@@ -151,6 +151,7 @@ const getOperations = {
 
         search.create({
             id, type,
+            filters: ['isinactive', 'is', false],
             columns: [{name: valueColumnName}, {name: textColumnName}]
         }).run().each(result => {
             data.push({value: result.getValue(valueColumnName), text: result.getValue(textColumnName)});
