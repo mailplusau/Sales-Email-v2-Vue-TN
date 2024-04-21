@@ -439,16 +439,15 @@ const getOperations = {
 }
 
 const postOperations = {
-    'sendNormalEmail' : function (response, {customerId, salesRecordId, emailDetails}) {
+    'sendNormalEmail' : function (response, {customerId, emailDetails}) {
         let {record, runtime, email} = NS_MODULES;
         let customerRecord = record.load({type: 'customer', id: customerId});
         let customerStatus = parseInt(customerRecord.getValue({fieldId: 'entitystatus'}));
-        let salesRecord = salesRecordId ? record.load({type: 'customrecord_sales', id: salesRecordId}) : null;
         let idOfLastAssignSalesRep = runtime['getCurrentUser']().id;
 
         // send email
         if (parseInt(emailDetails.recipient) > 0) {
-            idOfLastAssignSalesRep = salesRecord.getValue({fieldId: 'custrecord_sales_assigned'});
+            // idOfLastAssignSalesRep = salesRecord.getValue({fieldId: 'custrecord_sales_assigned'});
             let contactRecord = record.load({type: 'contact', id: emailDetails.recipient});
             let userRole = runtime['getCurrentUser']().role;
             let {salesRepId} = _getEmailAddressOfPartnersSalesRep(customerId);
