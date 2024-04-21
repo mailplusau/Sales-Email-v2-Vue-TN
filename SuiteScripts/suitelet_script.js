@@ -294,18 +294,16 @@ const getOperations = {
         _writeResponseJson(response, data);
     },
     'getSalesRepOfPartner': function (response, {customerId}) {
-        let salesRep = {};
-        let salesRepId = NS_MODULES.search['lookupFields']({
+        let salesReps = NS_MODULES.search['lookupFields']({
             type: 'customer',
             id: customerId,
             columns: ['partner.custentity_sales_rep_assigned']
-        })['partner.custentity_sales_rep_assigned'][0].value;
+        })['partner.custentity_sales_rep_assigned'];
 
-        let employeeRecord = NS_MODULES.record.load({type: 'employee', id: salesRepId});
-        salesRep['id'] = salesRepId;
-        salesRep['name'] = `${employeeRecord.getValue({fieldId: 'firstname'})} ${employeeRecord.getValue({fieldId: 'lastname'})}`;
-
-        _writeResponseJson(response, salesRep);
+        _writeResponseJson(response, {
+            id: salesReps.length ? salesReps[0].value : '668711',
+            name: salesReps.length ? salesReps[0].text : 'Lee Russell'
+        });
     },
     'getEmailTemplate' : function (response, {customerId, emailTemplateId}) {
         let mergeResult = NS_MODULES.render.mergeEmail({
