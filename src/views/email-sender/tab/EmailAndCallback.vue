@@ -22,11 +22,25 @@
                                     v-model="emailDetails.recipient" dense placeholder="(required)"></v-autocomplete>
                 </v-col>
                 <v-col cols="12" v-if="!progressWithoutEmail">
-                    <v-combobox prefix="CC:" v-model="emails"
+                    <v-combobox v-if="displayOnly" prefix="CC:" v-model="emailDetails.cc"
                                 multiple deletable-chips dense small-chips persistent-hint
                                 append-icon=""
                                 hint="Input a valid email address and hit [Enter]. Multiple email addresses can be entered with commas between them."
-                                :readonly="displayOnly" :disabled="displayOnly" :hide-details="displayOnly"
+                                readonly disabled hide-details>
+                        <template v-slot:selection="{ attrs, item, parent, selected }">
+                            <v-chip v-bind="attrs" :input-value="selected"
+                                    label small
+                                    class="my-1"
+                                    :color="`primary`">
+                                <span class="pr-1">{{ item }}</span>
+                                <v-icon small @click="parent.selectItem(item)" v-if="!displayOnly">mdi-close-circle</v-icon>
+                            </v-chip>
+                        </template>
+                    </v-combobox>
+                    <v-combobox v-else prefix="CC:" v-model="emails"
+                                multiple deletable-chips dense small-chips persistent-hint
+                                append-icon=""
+                                hint="Input a valid email address and hit [Enter]. Multiple email addresses can be entered with commas between them."
                                 @change="handleEmailsChanged">
                         <template v-slot:selection="{ attrs, item, parent, selected }">
                             <v-chip v-bind="attrs" :input-value="selected"
